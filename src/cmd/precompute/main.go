@@ -76,16 +76,14 @@ func buildGraph(m *protocol.Map) (graph, error) {
 func main() {
 	m, err := readMap()
 	if err != nil {
-		log.Printf("Failed to read map: %v", err)
-		os.Exit(1)
+		log.Fatalf("Failed to read map: %v", err)
 	}
 
 	fmt.Printf("Parsed map: %+v\n", m)
 
 	g, err := buildGraph(m)
 	if err != nil {
-		log.Printf("Failed to build graph: %v", err)
-		os.Exit(1)
+		log.Fatalf("Failed to build graph: %v", err)
 	}
 
 	fmt.Printf("Built graph: %+v\n", g)
