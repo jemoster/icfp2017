@@ -37,6 +37,7 @@ class OfflineAdapter:
         min_buffer_size = len(buffer_size_txt) + 1 + msg_size
 
         if len(self.buffer) < min_buffer_size:
+            self.buffer += self._socket.recv(self.buffer_size).decode()
             return
 
         msg_txt = self.buffer[:min_buffer_size]
@@ -49,6 +50,16 @@ def test_send(adapter, msg):
     msg = "{}:{}".format(len(serialized_msg), serialized_msg).encode()
     print('>>  ', msg)
     adapter._send(msg)
+
+
+def ranked(scores):
+    """
+    [{'score': 100, 'punter': 0}, ...]
+    :param scores:
+    :return:
+    """
+    return sorted(scores, key=lambda x: x['score'], reverse=True)
+
 
 
 if __name__ == "__main__":
@@ -70,14 +81,16 @@ if __name__ == "__main__":
         handshake = adapter._receive()
         print("<<  ", handshake)
 
-        setup = adapter._receive()
+        setup = None
+        while not setup:
+            setup = adapter._receive()
         print("<<  ", setup)
+        
         possible_claims = []
         for river in setup['map']['rivers']:
             possible_claims.append((river['source'], river['target']))
 
         punter_id = setup['punter']
-        print('punter_id:', punter_id)
 
         test_send(adapter, {'ready': punter_id})
 
@@ -86,7 +99,13 @@ if __name__ == "__main__":
             print("<<  ", play)
 
             if 'stop' in play:
+                for player in ranked(play['stop']['scores']):
+                    player_name = 'punter:' if player['punter'] != punter_id else "me:    "
+                    print('{} {punter}, score: {score}'.format(player_name, **player))
                 break
+
+            if 'timeout' in play:
+                continue
 
             for move in play['move']['moves']:
                 if 'pass' in move:
