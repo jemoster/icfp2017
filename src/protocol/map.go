@@ -3,16 +3,16 @@ package protocol
 type SiteID uint64
 
 type Site struct {
-	id SiteID
+	ID SiteID `json:"id"`
 }
 
 type River struct {
-	source SiteID
-	target SiteID
+	Source SiteID `json:"source"`
+	Target SiteID `json:"target"`
 }
 
 type Map struct {
-	sites  []Site
-	rivers []River
-	mines  []SiteID
+	Sites  []Site   `json:"sites"`
+	Rivers []River  `json:"rivers"`
+	Mines  []SiteID `json:"mines"`
 }

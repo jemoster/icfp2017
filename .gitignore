@@ -157,3 +157,5 @@ Cargo.lock
 ### Project Specific
 tools/scorebot/icfp2017
 *.idea
+
+precompute
