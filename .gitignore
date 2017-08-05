@@ -157,6 +157,7 @@ Cargo.lock
 ### Project Specific
 tools/scorebot/icfp2017
 *.idea
+data/
 
 # Don't include my vm's hard disk
 *.vhd
