@@ -4,9 +4,31 @@ import (
 	"math"
 
 	"github.com/jemoster/icfp2017/src/protocol"
+	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
 )
+
+type MetadataEdge struct {
+	F graph.Node
+	T graph.Node
+	W float64
+
+	IsOwned bool
+	Punter uint64
+}
+
+func (m MetadataEdge) From() graph.Node {
+	return m.F
+}
+
+func (m MetadataEdge) To() graph.Node {
+	return m.T
+}
+
+func (m MetadataEdge) Weight() float64 {
+	return m.W
+}
 
 // Build returns a graph.Graph that represents m.
 func Build(m *protocol.Map) *simple.UndirectedGraph {
@@ -16,15 +38,38 @@ func Build(m *protocol.Map) *simple.UndirectedGraph {
 		g.AddNode(simple.Node(si.ID))
 	}
 
+	var river *MetadataEdge
 	for _, r := range m.Rivers {
-		g.SetEdge(simple.Edge{
+		river = &MetadataEdge{
 			F: g.Node(int64(r.Source)),
 			T: g.Node(int64(r.Target)),
 			W: 1.0,
-		})
+		}
+		if r.IsOwned {
+			river.Punter = r.Punter
+		}
+		g.SetEdge(river)
 	}
 
 	return g
+}
+
+func SerializeRivers(g *simple.UndirectedGraph) []protocol.River {
+	edges := g.Edges();
+	rivers := make([]protocol.River, len(edges))
+	for i := range edges {
+		curEdge := edges[i].(MetadataEdge)
+		rivers[i] = protocol.River{
+			Source: protocol.SiteID(curEdge.From().ID()),
+			Target: protocol.SiteID(curEdge.To().ID()),
+		}
+
+		if curEdge.IsOwned {
+			rivers[i].IsOwned = true
+			rivers[i].Punter = curEdge.Punter
+		}
+	}
+	return rivers
 }
 
 // Distances is a map from source mine ID to map of target site ID to distance.
