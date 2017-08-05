@@ -41,7 +41,7 @@ func ShortestDistances(g *simple.UndirectedGraph, mines []protocol.SiteID) Dista
 
 		results[mine] = make(map[protocol.SiteID]uint64, len(sites))
 		for _, site := range sites {
-			// Add edges are weight 1, so the weight to a node is
+			// All edges are weight 1, so the weight to a node is
 			// the distance to that node.
 			results[mine][protocol.SiteID(site.ID())] = uint64(shortest.WeightTo(g.Node(site.ID())))
 		}
