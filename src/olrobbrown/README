@@ -1,0 +1,20 @@
+Quick and dirty random-ish walk bot.
+
+Made by:
+  Michael Yenik, but...
+
+Based on code by Joe Moster. We are in another team together but I made a
+separate team to submit to the lightning round due to unavailability of the
+registration ID for the original team, and lightning round time constraints.
+Everyone who knows the original team ID is asleep and the lightning round is due
+soon :(
+
+Ol' Rob starts at a random mine and makes a walk (takes first available adjacent
+move) as far as he can go. Upon having no options left, he backtraces his path
+looking for a way to continue it. If he traces all the way back to the mine and
+there are no options left, he picks another random mine. WIth no mines and no
+moves, he chooses randomly.
+
+Does decently against eager bot on larger maps.
+
+Uses only python standard libraries, just needs python 2.
