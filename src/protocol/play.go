@@ -83,24 +83,20 @@ func recv(r *bufio.Reader, v interface{}) error {
 func Play(r io.Reader, w io.Writer, g Game) error {
 	log.Printf("\n\n\n")
 
-	var err error
-
 	h := HandshakeClientServer{Me: g.Name()}
-	err = send(w, &h)
-	if err != nil {
+	if err := send(w, &h); err != nil {
 		return fmt.Errorf("failed sending handshake: %v", err)
 	}
 
 	br := bufio.NewReader(r)
 
 	var hr HandshakeServerClient
-	err = recv(br, &hr)
-	if err != nil {
+	if err := recv(br, &hr); err != nil {
 		return fmt.Errorf("failed receiving handshake: %v", err)
 	}
 
 	var input CombinedInput
-	if err = recv(br, &input); err != nil {
+	if err := recv(br, &input); err != nil {
 		return fmt.Errorf("failed to receive gameplay input: %v", err)
 	}
 
