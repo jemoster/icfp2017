@@ -11,7 +11,8 @@ server = "punter.inf.ed.ac.uk"
 known_bots = {
     'brown': "python -u src/pybots/ai_olrobbrown.py",
     'random': "python -u src/pybots/ai_random.py",
-    # "go run src/cmd/play/main.go",
+    # "go run src/bots/prattmic/walk/main.go",
+    # "go run src/bots/unremarkable/simpleton/main.go",
 }
 
 def main():

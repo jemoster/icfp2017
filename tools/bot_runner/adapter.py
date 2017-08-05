@@ -19,7 +19,7 @@ class OfflineAdapter:
 
         self.log_file = None
         if log:
-            self.log_file = open(log, 'w')
+            self.log_file = open(log+'.1.txt', 'w')
 
     def connect(self):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
