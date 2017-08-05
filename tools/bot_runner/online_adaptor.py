@@ -32,7 +32,7 @@ class OfflineAdapter:
         self._socket.send(msg)
         sleep(1.0)
 
-    def receive(self):
+    def receive(self, blocking=True):
         while ':' not in self.buffer:
             self.buffer += self._socket.recv(self.buffer_size).decode()
 
@@ -40,9 +40,10 @@ class OfflineAdapter:
         msg_size = int(buffer_size_txt)
         min_buffer_size = len(buffer_size_txt) + 1 + msg_size
 
-        if len(self.buffer) < min_buffer_size:
+        while len(self.buffer) < min_buffer_size:
             self.buffer += self._socket.recv(self.buffer_size).decode()
-            return
+            if not blocking:
+                return
 
         msg_txt = self.buffer[:min_buffer_size]
         self.buffer = self.buffer[min_buffer_size:]
@@ -62,9 +63,7 @@ class OfflineAdapter:
             bot.write(handshake)
 
             # Get Setup from server
-            setup = None
-            while not setup:
-                setup = self.receive()
+            setup = self.receive()
             self.punter_id = setup['punter']
 
             # Setup Bot
