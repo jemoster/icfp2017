@@ -66,7 +66,8 @@ if __name__ == '__main__':
 
     # Handshake
     handshake = {'me': 'EAGLESSSSSSS'}
-    print(format_send(handshake))
+    sys.stdout.write(format_send(handshake))
+    sys.stdout.flush()
     hand_in, buffer = read_structured(buffer)
 
 
@@ -77,4 +78,5 @@ if __name__ == '__main__':
     else:
         msg = gameplay(msg_in)
 
-    print(format_send(msg))
+    sys.stdout.write(format_send(msg))
+    sys.stdout.flush()

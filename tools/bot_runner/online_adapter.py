@@ -121,13 +121,30 @@ def get_dict_from_message(msg):
 class Bot:
     def __init__(self, exe):
         self.proc = subprocess.Popen(exe.split(' '), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+        self.buffer = ''
 
     def write(self, msg):
         self.proc.stdin.write(format_as_message(msg))
         self.proc.stdin.flush()
 
-    def read(self):
-        return get_dict_from_message(self.proc.stdout.readline().decode())
+    def read(self, blocking=True):
+        while ':' not in self.buffer:
+            self.buffer += self.proc.stdout.read(1).decode()
+
+        buffer_size_txt = self.buffer.split(':', 1)[0]
+        msg_size = int(buffer_size_txt)
+        min_buffer_size = len(buffer_size_txt) + 1 + msg_size
+
+        while len(self.buffer) < min_buffer_size:
+            self.buffer += self.proc.stdout.read(1).decode()
+            if not blocking:
+                return
+
+        msg_txt = self.buffer[:min_buffer_size]
+        self.buffer = self.buffer[min_buffer_size:]
+        msg = json.loads(msg_txt.split(':', 1)[1])
+
+        return msg
 
 
 if __name__ == "__main__":

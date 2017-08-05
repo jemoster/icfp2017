@@ -158,4 +158,7 @@ Cargo.lock
 tools/scorebot/icfp2017
 *.idea
 
+# Don't include my vm's hard disk
+*.vhd
+
 precompute
