@@ -93,7 +93,7 @@ type GameplayOutput struct {
 
 type Score struct {
 	Punter uint64 `json:"punter"`
-	Score  uint64 `json:"score"`
+	Score  int64  `json:"score"`
 }
 
 type Stop struct {

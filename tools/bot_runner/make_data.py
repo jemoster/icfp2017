@@ -4,6 +4,7 @@ from online_adapter import OfflineAdapter
 import random
 from time import time
 import argparse
+import os
 
 server = "punter.inf.ed.ac.uk"
 ports = [
@@ -42,14 +43,20 @@ def pick_port():
 def main():
     parser = argparse.ArgumentParser(description='ICFP 2017 DATA CANNON')
     parser.add_argument('exe', action="store", help='The executable to evaluate')
+    parser.add_argument('record', action="store", help='directory to save playlog to')
     results = parser.parse_args()
 
     while True:
         try:
+            if not os.path.exists(results.record):
+                os.makedirs(results.record)
+
             port = pick_port()
             print('connecting to {}:{}'.format(server, port))
-            log_name = 'data/olrobbrown/{}_{}'.format(port, time())
+
+            log_name = os.path.join(results.record, '{}_{}'.format(port, time()))
             print('logging to', log_name)
+
             adapter = OfflineAdapter(server, port, results.exe, log_name)
             scores = adapter.run()
             for player in scores:
