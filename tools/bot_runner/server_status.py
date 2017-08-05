@@ -8,11 +8,19 @@ import random
 
 def parse(line):
     blocks = re.split('<[^>]*>', line)
-    status = blocks[2]
-    players = blocks[4]
-    map = blocks[-3]
-    port = blocks[-6]
-    return status, players, port, map
+
+    entry = {
+        'status': blocks[2],
+        'players': blocks[4],
+        'map': blocks[-3],
+        'port': blocks[-6],
+        'waiting': 0,
+    }
+    if 'Waiting for punters' in entry['status']:
+        a, b = entry['status'].split('Waiting for punters. (')[1].replace(')', '').split('/')
+        entry['waiting'] = int(b)-int(a)
+
+    return entry
 
 
 def read_status():
@@ -27,31 +35,15 @@ def read_status():
     for _ in range(18):
         buff.readline()
 
-    statuses = []
+    statuses = {}
     for line in buff:
         try:
-            statuses.append(parse(line))
+            s = parse(line)
+            statuses[s['port']] = s
         except:
             pass
 
     return statuses
 
 
-def waiting_for(entry):
-    if 'Waiting for punters' in entry[0]:
-        a, b = entry[0].split('Waiting for punters. (')[1].replace(')', '').split('/')
-        return int(b)-int(a)
-    return 0
 
-
-def find_new_game():
-    stats = read_status()
-
-    for x in range(len(stats)):
-        entry = random.choice(stats)
-        open_spots = waiting_for(entry)
-        if open_spots > 0:
-            return entry
-
-if __name__ == '__main__':
-    print(find_new_game())
