@@ -1,4 +1,4 @@
-#!/usr/bin/env python -u
+#!/usr/bin/env python3 -u
 import random
 from base_bot import PyBot, log
 
@@ -26,7 +26,7 @@ class OlRobBrownBot(PyBot):
                 'possible_claims': possible_claims,
                 'punter_id': punter_id,
                 'available_mines': available_mines,
-                'prev_sites':prev_sites
+                'prev_sites': prev_sites,
             }
         }
 

@@ -9,11 +9,12 @@ from time import time
 server = "punter.inf.ed.ac.uk"
 
 known_bots = {
-    'brown': "python -u src/pybots/ai_olrobbrown.py",
-    'random': "python -u src/pybots/ai_random.py",
+    'brown': "python3 -u src/pybots/ai_olrobbrown.py",
+    'random': "python3 -u src/pybots/ai_random.py",
     # "go run src/bots/prattmic/walk/main.go",
     # "go run src/bots/unremarkable/simpleton/main.go",
 }
+
 
 def main():
     parser = argparse.ArgumentParser(description='ICFP 2017 Online Adapter')
@@ -44,7 +45,7 @@ def main():
 
         basename = '{}_{}_{}_'.format(results.port, run_time, num)
         filename = os.path.join('data', 'multibot', basename)
-        cmd = " ".join(["python", "-u", "tools/bot_runner/online_adapter.py", '"{}"'.format(bot), str(results.port), '--record', filename])
+        cmd = " ".join(["python3", "-u", "tools/bot_runner/online_adapter.py", '"{}"'.format(bot), str(results.port), '--record', filename])
         print('calling: ', cmd)
         procs.append(subprocess.Popen(cmd, shell=True))
     for proc in procs:

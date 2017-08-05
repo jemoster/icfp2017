@@ -48,8 +48,7 @@ def main():
 
     while True:
         try:
-            if not os.path.exists(results.record):
-                os.makedirs(results.record)
+            os.makedirs(results.record, exist_ok=True)
 
             port = pick_port()
             print('connecting to {}:{}'.format(server, port))
