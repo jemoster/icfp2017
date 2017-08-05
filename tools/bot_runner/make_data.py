@@ -10,6 +10,25 @@ ports = [
     (9026, 9030),
     (9036, 9040),
     (9046, 9050),
+    (9056, 9060),
+    (9066, 9070),
+    (9076, 9080),
+    (9086, 9090),
+    (9096, 9100),
+    (9106, 9110),
+    (9116, 9120),
+    (9126, 9130),
+    (9136, 9140),
+    (9146, 9150),
+    (9156, 9160),
+    (9166, 9170),
+    (9176, 9180),
+    (9186, 9190),
+    (9196, 9200),
+    (9206, 9210),
+    (9216, 9220),
+    (9226, 9230),
+    (9236, 9240),
 ]
 
 
@@ -27,7 +46,7 @@ def main():
         try:
             port = pick_port()
             print('connecting to {}:{}'.format(server, port))
-            log_name = 'data/{}_{}.0'.format(port, time())
+            log_name = 'data/olrobbrown/{}_{}.0'.format(port, time())
             print('logging to', log_name)
             adapter = OfflineAdapter(server, port, results.exe, log_name)
             scores = adapter.run()
