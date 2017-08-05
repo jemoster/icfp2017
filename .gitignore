@@ -162,4 +162,5 @@ data/
 # Don't include my vm's hard disk
 *.vhd
 
+play
 precompute
