@@ -55,11 +55,6 @@ func Build(m *protocol.Map) *simple.UndirectedGraph {
 	return g
 }
 
-// ShortestFrom returns a path.Shortest for a specific mine.
-func ShortestFrom(g *simple.UndirectedGraph, mine protocol.SiteID) path.Shortest {
-	return path.DijkstraFrom(g.Node(int64(mine)), g)
-}
-
 func SerializeRivers(g *simple.UndirectedGraph) []protocol.River {
 	edges := g.Edges();
 	rivers := make([]protocol.River, len(edges))
