@@ -1,5 +1,5 @@
 import random
-from base_bot import PyBot
+from base_bot import PyBot, log
 
 
 class RandoBot(PyBot):
@@ -34,7 +34,11 @@ class RandoBot(PyBot):
             if 'pass' in move:
                 continue
             move = move['claim']
-            possible_claims.remove([move['source'], move['target']])
+            try:
+                possible_claims.remove([move['source'], move['target']])
+            except ValueError:
+                log('possible claims'.format(possible_claims))
+                log('failed to remove ({},{})'.format(move['source'], move['target']))
 
         claim = random.choice(possible_claims)
 

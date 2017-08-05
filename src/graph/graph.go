@@ -27,6 +27,11 @@ func Build(m *protocol.Map) *simple.UndirectedGraph {
 	return g
 }
 
+// ShortestFrom returns a path.Shortest for a specific mine.
+func ShortestFrom(g *simple.UndirectedGraph, mine protocol.SiteID) path.Shortest {
+	return path.DijkstraFrom(g.Node(int64(mine)), g)
+}
+
 // Distances is a map from source mine ID to map of target site ID to distance.
 type Distances map[protocol.SiteID]map[protocol.SiteID]uint64
 
@@ -37,7 +42,7 @@ func ShortestDistances(g *simple.UndirectedGraph, mines []protocol.SiteID) Dista
 	sites := g.Nodes()
 	results := make(Distances, len(mines))
 	for _, mine := range mines {
-		shortest := path.DijkstraFrom(g.Node(int64(mine)), g)
+		shortest := ShortestFrom(g, mine)
 
 		results[mine] = make(map[protocol.SiteID]uint64, len(sites))
 		for _, site := range sites {
