@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,6 +12,14 @@ import (
 
 	"github.com/jemoster/icfp2017/src/protocol"
 )
+
+var debug = flag.Bool("v", false, "verbose logging")
+
+func debugf(format string, v ...interface{}) {
+	if *debug {
+		log.Printf(format, v...)
+	}
+}
 
 func readMap() (*protocol.Map, error) {
 	b, err := ioutil.ReadAll(os.Stdin)
@@ -51,14 +60,14 @@ func (uv unvisited) Minimum() *site {
 	return min
 }
 
-// Copy returns a new graph with cleared visited and distance.
+// Copy returns a new graph with cleared distance.
 func (g graph) Copy() (graph, unvisited) {
 	ng := make(graph)
 	nuv := make(unvisited)
 
-	for i, s := range g {
+	for i := range g {
 		ng[i] = &site{
-			id:        s.id,
+			id:        i,
 			distance:  math.MaxUint64,
 			neighbors: make(neighbors),
 		}
@@ -98,7 +107,7 @@ func buildGraph(m *protocol.Map) (graph, unvisited, error) {
 		g[si.ID] = &site{
 			id:        si.ID,
 			distance:  math.MaxUint64,
-			neighbors: make(map[protocol.SiteID]*site),
+			neighbors: make(neighbors),
 		}
 		uv[si.ID] = g[si.ID]
 	}
@@ -164,25 +173,59 @@ func fillGraph(g graph, uv unvisited, start protocol.SiteID) error {
 	return nil
 }
 
+// distances contains the distance (value) to a target (key) for one source.
+type distances map[protocol.SiteID]uint64
+
+// allDistances returns a map of sites to distances.
+func allDistances(g graph) distances {
+	m := make(distances, len(g))
+	for i, s := range g {
+		m[i] = s.distance
+	}
+	return m
+}
+
 func main() {
+	flag.Parse()
+
 	m, err := readMap()
 	if err != nil {
 		log.Fatalf("Failed to read map: %v", err)
 	}
 
-	fmt.Printf("Parsed map: %+v\n", m)
+	debugf("Parsed map: %+v\n", m)
 
 	g, uv, err := buildGraph(m)
 	if err != nil {
 		log.Fatalf("Failed to build graph: %v", err)
 	}
 
-	fmt.Printf("Built graph: %+v unvisited: %+v\n", g, uv)
+	debugf("Built graph: %+v unvisited: %+v\n", g, uv)
 
-	// TODO(prattmic): fill a graph for each mine and serialize out.
-	if err := fillGraph(g, uv, m.Mines[0]); err != nil {
-		log.Fatalf("Failed to fill graph: %v", err)
+	// Map from source mine to all distances.
+	results := make(map[protocol.SiteID]distances, len(m.Mines))
+	for _, mine := range m.Mines {
+		ng, uv := g.Copy()
+
+		debugf("Mine: %+v", mine)
+
+		if err := fillGraph(ng, uv, mine); err != nil {
+			log.Fatalf("Failed to fill graph: %v", err)
+		}
+
+		debugf("Filled graph: %+v", ng)
+
+		dist := allDistances(ng)
+		debugf("Distances: %+v", dist)
+		results[mine] = dist
 	}
 
-	fmt.Printf("Filled graph: %+v", g)
+	debugf("Complete results: %+v", results)
+
+	b, err := json.Marshal(results)
+	if err != nil {
+		log.Fatalf("Failed to marshal results: %v", err)
+	}
+
+	fmt.Println(string(b))
 }
