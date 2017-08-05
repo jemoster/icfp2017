@@ -40,19 +40,6 @@ func ParseState(jsonState json.RawMessage) (*state, error) {
 	return s, nil
 }
 
-func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move) {
-	for i := range m {
-		move := m[i]
-		if move.Claim != nil {
-			claimedEdge := g.EdgeBetween(
-				g.Node(int64(move.Claim.Source)),
-				g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
-			claimedEdge.IsOwned = true
-			claimedEdge.Punter = move.Claim.Punter
-		}
-	}
-}
-
 func (s *state) Update(g *simple.UndirectedGraph, m []protocol.Move) {
 	s.Map.Rivers = graph.SerializeRivers(g)
 	s.Turn += uint64(len(m))
@@ -100,7 +87,7 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 	}
 
 	g := graph.Build(&s.Map)
-	UpdateGraph(g, m)
+	graph.UpdateGraph(g, m)
 	s.Update(g, m)
 	glog.Infof("Turn: %d", s.Turn)
 
