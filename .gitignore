@@ -165,3 +165,6 @@ data/
 /precompute
 /simpleton
 /walk
+
+# Editor swap files
+*.swp
