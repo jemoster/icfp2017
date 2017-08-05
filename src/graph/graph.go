@@ -78,6 +78,24 @@ func SerializeRivers(g *simple.UndirectedGraph) []protocol.River {
 	return rivers
 }
 
+func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move) {
+	for i := range m {
+		move := m[i]
+		if move.Claim != nil {
+			claimedEdge := g.EdgeBetween(
+				g.Node(int64(move.Claim.Source)),
+				g.Node(int64(move.Claim.Target))).(*MetadataEdge)
+			claimedEdge.IsOwned = true
+			claimedEdge.Punter = move.Claim.Punter
+		}
+	}
+}
+
+// ShortestFrom returns a path.Shortest for a specific mine.
+func ShortestFrom(g *simple.UndirectedGraph, mine protocol.SiteID) path.Shortest {
+	return path.DijkstraFrom(g.Node(int64(mine)), g)
+}
+
 // Distances is a map from source mine ID to map of target site ID to distance.
 type Distances map[protocol.SiteID]map[protocol.SiteID]uint64
 
