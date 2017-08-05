@@ -136,7 +136,9 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 
 	g := graph.Build(&s.Map)
 
-	s.Moves = pickMoves(g, s, len(s.Map.Sites))
+	// There are as many moves as rivers, but divided among all punters.
+	n := (len(s.Map.Rivers) + int(s.Punters)) / int(s.Punters)
+	s.Moves = pickMoves(g, s, n)
 
 	return &protocol.Ready{
 		Ready: s.Punter,
