@@ -58,7 +58,7 @@ func SerializeRivers(g *simple.UndirectedGraph) []protocol.River {
 	edges := g.Edges();
 	rivers := make([]protocol.River, len(edges))
 	for i := range edges {
-		curEdge := edges[i].(MetadataEdge)
+		curEdge := edges[i].(*MetadataEdge)
 		rivers[i] = protocol.River{
 			Source: protocol.SiteID(curEdge.From().ID()),
 			Target: protocol.SiteID(curEdge.To().ID()),
