@@ -46,7 +46,7 @@ def main():
         try:
             port = pick_port()
             print('connecting to {}:{}'.format(server, port))
-            log_name = 'data/olrobbrown/{}_{}.0'.format(port, time())
+            log_name = 'data/olrobbrown/{}_{}.1.txt'.format(port, time())
             print('logging to', log_name)
             adapter = OfflineAdapter(server, port, results.exe, log_name)
             scores = adapter.run()
