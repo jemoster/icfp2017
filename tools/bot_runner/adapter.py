@@ -1,3 +1,4 @@
+import os
 import subprocess
 import json
 import socket
@@ -18,8 +19,10 @@ class OfflineAdapter:
         self.buffer = ''
 
         self.log_file = None
-        if log:
-            self.log_file = open(log+'.1.txt', 'w')
+        if log is not None:
+            filename = log + '.1.txt'
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            self.log_file = open(filename, 'w')
 
     def connect(self):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
