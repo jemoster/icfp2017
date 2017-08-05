@@ -10,7 +10,6 @@ import (
 
 	"github.com/jemoster/icfp2017/src/graph"
 	"github.com/jemoster/icfp2017/src/protocol"
-	"gonum.org/v1/gonum/graph/path"
 )
 
 var debug = flag.Bool("v", false, "verbose logging")
@@ -52,17 +51,7 @@ func main() {
 
 	debugf("Graph: %+v\n", g)
 
-	results := make(map[protocol.SiteID]distances, len(m.Mines))
-	for _, mine := range m.Mines {
-		shortest := path.DijkstraFrom(g.Node(int64(mine)), g)
-
-		results[mine] = make(distances, len(m.Sites))
-		for _, si := range m.Sites {
-			// Add edges are weight 1, so the weight to a node is
-			// the distance to that node.
-			results[mine][si.ID] = uint64(shortest.WeightTo(g.Node(int64(si.ID))))
-		}
-	}
+	results := graph.ShortestDistances(g, m.Mines)
 
 	debugf("Results: %+v\n", results)
 

@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/jemoster/icfp2017/src/protocol"
+	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
@@ -24,4 +25,27 @@ func Build(m *protocol.Map) *simple.UndirectedGraph {
 	}
 
 	return g
+}
+
+// Distances is a map from source mine ID to map of target site ID to distance.
+type Distances map[protocol.SiteID]map[protocol.SiteID]uint64
+
+// ShortestDistances returns the distances from each mine to every site.
+//
+// g is a graph created by Build.
+func ShortestDistances(g *simple.UndirectedGraph, mines []protocol.SiteID) Distances {
+	sites := g.Nodes()
+	results := make(Distances, len(mines))
+	for _, mine := range mines {
+		shortest := path.DijkstraFrom(g.Node(int64(mine)), g)
+
+		results[mine] = make(map[protocol.SiteID]uint64, len(sites))
+		for _, site := range sites {
+			// Add edges are weight 1, so the weight to a node is
+			// the distance to that node.
+			results[mine][protocol.SiteID(site.ID())] = uint64(shortest.WeightTo(g.Node(site.ID())))
+		}
+	}
+
+	return results
 }
