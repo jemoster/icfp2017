@@ -1,6 +1,6 @@
 FROM debian:9
 
-RUN apt-get update && apt-get install -y golang-1.7 git
+RUN apt-get update && apt-get install -y golang-1.7 git python3
 
 RUN mkdir -p /src
 WORKDIR /src
@@ -27,6 +27,7 @@ RUN go get \
 
 # Everything after this line will get run every time!
 COPY . /src/github.com/jemoster/icfp2017
+WORKDIR /src/github.com/jemoster/icfp2017
 RUN go get -v github.com/jemoster/icfp2017/...
-
+# build simpleton
 RUN go build github.com/jemoster/icfp2017/src/bots/unremarkable/simpleton
