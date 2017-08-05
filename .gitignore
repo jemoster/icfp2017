@@ -162,6 +162,6 @@ data/
 # Don't include my vm's hard disk
 *.vhd
 
-precompute
-simpleton
-walk
+/precompute
+/simpleton
+/walk
