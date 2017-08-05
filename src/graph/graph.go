@@ -46,6 +46,7 @@ func Build(m *protocol.Map) *simple.UndirectedGraph {
 			W: 1.0,
 		}
 		if r.IsOwned {
+			river.IsOwned = true
 			river.Punter = r.Punter
 		}
 		g.SetEdge(river)
