@@ -7,7 +7,9 @@ import (
 	"os"
 
 	"github.com/golang/glog"
+	"github.com/jemoster/icfp2017/src/graph"
 	"github.com/jemoster/icfp2017/src/protocol"
+	"gonum.org/v1/gonum/graph/simple"
 )
 
 type state struct {
@@ -24,16 +26,42 @@ func (LongWalk) Name() string {
 	return "prattmic-longwalk"
 }
 
+// furthestNode returns the mine and site that are furthest apart, and how far
+// they are.
+func furthestNode(g *simple.UndirectedGraph, s *state) (protocol.SiteID, protocol.SiteID, uint64) {
+	distances := graph.ShortestDistances(g, s.Map.Mines)
+
+	var mine protocol.SiteID
+	var target protocol.SiteID
+	var furthest uint64
+
+	for m, sites := range distances {
+		for site, dist := range sites {
+			if dist > furthest {
+				mine = m
+				target = site
+				furthest = dist
+			}
+		}
+	}
+
+	return mine, target, furthest
+}
+
 func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	glog.Infof("Setup")
 
-	s := state{
+	s := &state{
 		Punter:  setup.Punter,
 		Punters: setup.Punters,
 		Map:     setup.Map,
 
 		Turn: 0,
 	}
+
+	g := graph.Build(&s.Map)
+	mine, target, dist := furthestNode(g, s)
+	glog.Infof("Furthest site: %d -> %d: %d", mine, target, dist)
 
 	return &protocol.Ready{
 		Ready: s.Punter,
