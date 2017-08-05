@@ -29,7 +29,6 @@ func readMap() (*protocol.Map, error) {
 type site struct {
 	id protocol.SiteID
 
-	visited  bool
 	distance uint64
 
 	neighbors neighbors
@@ -136,8 +135,6 @@ func fillGraph(g graph, uv unvisited, start protocol.SiteID) error {
 	}
 
 	curr.distance = 0
-	// TODO(prattmic): visited is useless given uv.
-	curr.visited = true
 
 	for _, n := range curr.neighbors {
 		dist := curr.distance + 1
@@ -160,8 +157,6 @@ func fillGraph(g graph, uv unvisited, start protocol.SiteID) error {
 				n.distance = dist
 			}
 		}
-
-		curr.visited = true
 
 		delete(uv, curr.id)
 	}
