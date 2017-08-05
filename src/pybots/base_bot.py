@@ -36,8 +36,7 @@ class PyBot:
         sys.stdout.write(msg_ser)
         sys.stdout.flush()
 
-    @staticmethod
-    def setup(setup):
+    def setup(self, setup):
         p = setup['punter']
 
         possible_claims = []
@@ -46,10 +45,15 @@ class PyBot:
 
         punter_id = setup['punter']
 
-        return {'ready': p, 'state': {'possible_claims': possible_claims, 'punter_id': punter_id}}
+        return {
+            'ready': p,
+            'state': {
+                'possible_claims': possible_claims,
+                'punter_id': punter_id
+            }
+        }
 
-    @staticmethod
-    def gameplay(msg):
+    def gameplay(self, msg):
         if 'stop' in msg:
             return {}
 
@@ -67,7 +71,17 @@ class PyBot:
 
         claim = random.choice(possible_claims)
 
-        return {"claim": {"punter": punter_id, 'source': claim[0], 'target': claim[1]}, 'state': {'possible_claims': possible_claims, 'punter_id': punter_id}}
+        return {
+            'claim': {
+                'punter': punter_id,
+                'source': claim[0],
+                'target': claim[1]
+            },
+            'state': {
+                'possible_claims': possible_claims,
+                'punter_id': punter_id
+            }
+        }
 
     def _read_structured(self):
         while ':' not in self.buffer:
