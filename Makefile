@@ -17,3 +17,6 @@ shell: build
 
 simpleton-run: build
 	docker run $(MAPS) boxes $(RUNNER) ./simpleton 9017
+
+walkbot-run: build
+	docker run $(MAPS) boxes $(RUNNER) ./walk 9017

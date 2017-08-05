@@ -31,3 +31,5 @@ WORKDIR /src/github.com/jemoster/icfp2017
 RUN go get -v github.com/jemoster/icfp2017/...
 # build simpleton
 RUN go build github.com/jemoster/icfp2017/src/bots/unremarkable/simpleton
+# build walkbot
+RUN go build github.com/jemoster/icfp2017/src/bots/prattmic/walk
