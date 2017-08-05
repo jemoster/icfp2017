@@ -127,5 +127,5 @@ def log(s):
 
 
 if __name__ == '__main__':
-    bot = OlRobBrownBot('EAGLESSSSS!')
+    bot = OlRobBrownBot('ol\'robbrown')
     bot.run()
