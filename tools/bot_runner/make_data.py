@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from online_adapter import OfflineAdapter
 import random
 from time import time

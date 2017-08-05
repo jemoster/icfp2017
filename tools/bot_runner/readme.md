@@ -4,14 +4,14 @@
 
 From the root folder run:
 
-    python tools/bot_runner/online_adapter.py "python -u src/randobot/main.py" 9007
+    python3 tools/bot_runner/online_adapter.py "python -u src/randobot/main.py" 9007
     
 `9007` is the port number to direct at. 
 See http://punter.inf.ed.ac.uk/status.html for port states.
 
 For further usage instructions:
 
-    python main.py --help
+    python3 main.py --help
     
 ## It failed! Why!?
 

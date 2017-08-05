@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import socket
 import json
@@ -28,7 +30,7 @@ class OfflineAdapter:
         self._socket.close()
 
     def send(self, msg):
-        print(">>  {}\n".format(json.dumps(msg)))
+        print(">>  {}".format(json.dumps(msg)))
         if self.log_file:
             self.log_file.write(">> {}\n".format(json.dumps(msg)))
         msg = format_as_message(msg)
