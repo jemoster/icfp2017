@@ -34,7 +34,7 @@ func (LongWalk) Name() string {
 
 // furthestNode returns the mine and site that are furthest apart, and how far
 // they are.
-func furthestNode(g *simple.UndirectedGraph, s *state) (protocol.SiteID, protocol.SiteID, uint64, []gograph.Node) {
+func furthestNode(g *simple.UndirectedGraph, s *state, except map[protocol.SiteID]struct{}) (protocol.SiteID, protocol.SiteID, uint64, []gograph.Node) {
 	var (
 		mine     protocol.SiteID
 		target   protocol.SiteID
@@ -46,6 +46,10 @@ func furthestNode(g *simple.UndirectedGraph, s *state) (protocol.SiteID, protoco
 		shortest := graph.ShortestFrom(g, m)
 
 		for _, site := range s.Map.Sites {
+			if _, ok := except[site.ID]; ok {
+				continue
+			}
+
 			n := g.Node(int64(site.ID))
 			dist := shortest.WeightTo(n)
 			if math.IsInf(dist, 0) {
@@ -65,6 +69,58 @@ func furthestNode(g *simple.UndirectedGraph, s *state) (protocol.SiteID, protoco
 	return mine, target, furthest, path
 }
 
+// claim is equivalent to protocol.Claim, but a must always be greater than b,
+// so equivalent claims hash as equal.
+type claim struct {
+	a protocol.SiteID
+	b protocol.SiteID
+}
+
+func makeClaim(source, target protocol.SiteID) claim {
+	if source < target {
+		return claim{source, target}
+	}
+	return claim{target, source}
+}
+
+func pickMoves(g *simple.UndirectedGraph, s *state, n int) []protocol.Move {
+	taken := make(map[protocol.SiteID]struct{})
+	claims := make(map[claim]struct{}, n)
+	moves := make([]protocol.Move, 0, n)
+
+	for len(moves) < n {
+		mine, target, dist, path := furthestNode(g, s, taken)
+		glog.Infof("Furthest site: %d -> %d: %d, path: %+v", mine, target, dist, path)
+		if dist == 0 {
+			break
+		}
+		taken[target] = struct{}{}
+
+		for i := uint64(0); i < dist; i++ {
+			source := protocol.SiteID(path[i].ID())
+			target := protocol.SiteID(path[i+1].ID())
+
+			c := makeClaim(source, target)
+			if _, ok := claims[c]; ok {
+				glog.Infof("edge %v already taken by previous move", c)
+				continue
+			}
+			claims[c] = struct{}{}
+
+			moves = append(moves, protocol.Move{
+				Claim: &protocol.Claim{
+					Punter: s.Punter,
+					Source: source,
+					Target: target,
+				},
+			})
+			glog.Infof("move %d: %v", i, moves[len(moves)-1])
+		}
+	}
+
+	return moves
+}
+
 func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	glog.Infof("Setup")
 
@@ -79,20 +135,8 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	}
 
 	g := graph.Build(&s.Map)
-	mine, target, dist, path := furthestNode(g, s)
-	glog.Infof("Furthest site: %d -> %d: %d, path: %+v", mine, target, dist, path)
 
-	s.Moves = make([]protocol.Move, dist)
-	for i := range s.Moves {
-		s.Moves[i] = protocol.Move{
-			Claim: &protocol.Claim{
-				Punter: s.Punter,
-				Source: protocol.SiteID(path[i].ID()),
-				Target: protocol.SiteID(path[i+1].ID()),
-			},
-		}
-		glog.Infof("move %d: %v", i, s.Moves[i])
-	}
+	s.Moves = pickMoves(g, s, len(s.Map.Sites))
 
 	return &protocol.Ready{
 		Ready: s.Punter,
