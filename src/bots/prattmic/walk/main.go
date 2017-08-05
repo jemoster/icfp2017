@@ -21,6 +21,9 @@ type state struct {
 
 	Turn  uint64
 	Moves []protocol.Move
+
+	// MovesTaken contains indexes in Moves of that we've seen as taken.
+	MovesTaken map[uint64]struct{}
 }
 
 type LongWalk struct{}
@@ -71,6 +74,8 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 		Map:     setup.Map,
 
 		Turn: 0,
+
+		MovesTaken: make(map[uint64]struct{}),
 	}
 
 	g := graph.Build(&s.Map)
@@ -105,8 +110,39 @@ func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 
 	glog.Infof("Turn: %d", s.Turn)
 
+	// Check if any of our moves have been taken.
+	//
+	// Obviously this isn't very efficient.
+	for i := s.Turn; i < uint64(len(s.Moves)); i++ {
+		if s.Moves[i].Claim == nil {
+			continue
+		}
+
+		ourSource := s.Moves[i].Claim.Source
+		ourTarget := s.Moves[i].Claim.Target
+
+		for j := range m {
+			if m[j].Claim == nil {
+				continue
+			}
+
+			theirSource := m[j].Claim.Source
+			theirTarget := m[j].Claim.Target
+
+			if ourSource == theirSource && ourTarget == theirTarget {
+				s.MovesTaken[i] = struct{}{}
+			}
+			if ourSource == theirTarget && ourTarget == theirSource {
+				s.MovesTaken[i] = struct{}{}
+			}
+		}
+	}
+
 	var move protocol.Move
 	if s.Turn < uint64(len(s.Moves)) {
+		if _, ok := s.MovesTaken[s.Turn]; ok {
+			glog.Warningf("Move already taken!")
+		}
 		move = s.Moves[s.Turn]
 	} else {
 		move = protocol.Move{
