@@ -28,9 +28,9 @@ class OfflineAdapter:
         self._socket.close()
 
     def send(self, msg):
-        print(">>  {}\n".format(msg))
+        print(">>  {}\n".format(json.dumps(msg)))
         if self.log_file:
-            self.log_file.write(">> {}\n".format(msg))
+            self.log_file.write(">> {}\n".format(json.dumps(msg)))
         msg = format_as_message(msg)
         self._socket.send(msg)
         sleep(1.0)
@@ -53,7 +53,7 @@ class OfflineAdapter:
         msg = json.loads(msg_txt.split(':', 1)[1])
         print("<<  {}".format(json.dumps(msg)))
         if self.log_file:
-            self.log_file.write("<< {}\n".format(msg))
+            self.log_file.write("<< {}\n".format(json.dumps(msg)))
         return msg
 
     def run(self):
