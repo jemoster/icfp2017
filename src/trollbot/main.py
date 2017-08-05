@@ -21,6 +21,7 @@ import random
 
 #TODO: implement intelligent port selector based on parsing of status page
 
+
 #===========================================
 
 def log(s):
@@ -33,9 +34,7 @@ class trollbot:
 
 
     def setup(self, setup):
-        log("Setting up...")
         self.punter = setup['punter']
-        log(self.punter)
 
         possible_claims = []
         for river in setup['map']['rivers']:
@@ -74,8 +73,6 @@ class trollbot:
         if 'timeout' in msg:
             return {}
         self.punter = msg["state"]["punter_id"]
-
-        log("I am punter " + str(self.punter))
 
         possible_claims = msg['state']['possible_claims']
         punter_id = msg['state']['punter_id']
@@ -171,8 +168,10 @@ def print_err(msg):
 if __name__ == '__main__':
     buffer = ''
 
+    name = random.randint(0, 999999)
+
     # Handshake
-    handshake = {'me': 'WINRAR'}
+    handshake = {'me': str(name)}
     print(format_send(handshake))
     hand_in, buffer = read_structured(buffer)
 
