@@ -86,7 +86,7 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 				Target: protocol.SiteID(path[i+1].ID()),
 			},
 		}
-		glog.Infof("move %d: %+v", i, s.Moves[i].Claim)
+		glog.Infof("move %d: %v", i, s.Moves[i])
 	}
 
 	return &protocol.Ready{
@@ -115,7 +115,7 @@ func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 			},
 		}
 	}
-	glog.Infof("Playing: %+v", move)
+	glog.Infof("Playing: %v", move)
 
 	s.Turn++
 

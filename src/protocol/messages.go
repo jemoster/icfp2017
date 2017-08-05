@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type SiteID uint64
@@ -56,6 +57,16 @@ type Pass struct {
 type Move struct {
 	Claim *Claim `json:"claim,omitempty"`
 	Pass  *Pass  `json:"pass,omitempty"`
+}
+
+func (m Move) String() string {
+	if m.Claim != nil {
+		return fmt.Sprintf("{Claim: %+v}", m.Claim)
+	}
+	if m.Pass != nil {
+		return fmt.Sprintf("{Pass: %+v}", m.Pass)
+	}
+	return "{<nil>}"
 }
 
 // CombinedInput contains all the fields from the setup, gameplay, and stop
