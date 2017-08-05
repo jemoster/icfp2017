@@ -6,10 +6,20 @@ import random
 
 #===========================================
 #SUMMARY
-#trollbot literally picks a random node out of all nodes connected to claims made by previous bots.
+#trollbot literally picks a random node out of all nodes connected to claims made by other bots on the previous turn.
+#The premise is to shorten the paths of other bots.
 #When no such nodes are available, defaults to olrobbrown behavior
 #This is intended to be the first half of a legit strategy. Confuse the other bots until the solution space of nodes is
 #small enough to brute force. GG.
+
+#TODO: implement tracker to ensure that all bots are cut off evenly, to prevent one bot from randomly extending its path
+#without interference
+
+#TODO: Implement brute force
+
+#TODO: implement auto-player if not already available and keep track of score
+
+#TODO: implement intelligent port selector based on parsing of status page
 
 #===========================================
 
