@@ -5,7 +5,6 @@ import (
 )
 
 type SiteID uint64
-type State json.RawMessage
 
 type Site struct {
 	ID SiteID `json:"id"`
@@ -37,8 +36,11 @@ type Setup struct {
 }
 
 type Ready struct {
-	Ready uint64      `json:"ready"`
-	State State `json:"state"`
+	Ready uint64 `json:"ready"`
+
+	// State is the Game's internal state, which will be marshalled to
+	// JSON.
+	State interface{} `json:"state"`
 }
 
 type Claim struct {
@@ -52,26 +54,30 @@ type Pass struct {
 }
 
 type Move struct {
-	Setup
 	Claim *Claim `json:"claim,omitempty"`
 	Pass  *Pass  `json:"pass,omitempty"`
 }
 
-type GameplayInput struct {
-	Setup
+// CombinedInput contains all the fields from the setup, gameplay, and stop
+// states.
+type CombinedInput struct {
+	*Setup
 	Move *struct {
 		Moves []Move `json:"moves"`
 	} `json:"move"`
-	Stop *struct {
-		Moves []Move `json:"moves"`
-		Scores []Score `json:"scores"`
-	} `json:"stop"`
-	State State `json:"state"`
+	Stop *Stop `json:"stop"`
+
+	// State is the Game's internal state, which cannot be decoded by this
+	// package.
+	State json.RawMessage `json:"state"`
 }
 
 type GameplayOutput struct {
 	Move
-	State State `json:"state"`
+
+	// State is the Game's internal state, which will be marshalled to
+	// JSON.
+	State interface{} `json:"state"`
 }
 
 type Score struct {
@@ -82,11 +88,6 @@ type Score struct {
 type Stop struct {
 	Moves  []Move  `json:"moves"`
 	Scores []Score `json:"scores"`
-}
-
-type StopInput struct {
-	Stop  Stop        `json:"stop"`
-	State State `json:"state"`
 }
 
 type Timeout struct {

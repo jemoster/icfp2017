@@ -1,77 +1,84 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
 	"fmt"
-	"log"
 	"os"
-	
-	. "github.com/jemoster/icfp2017/src/protocol"
+
+	"github.com/golang/glog"
+	"github.com/jemoster/icfp2017/src/protocol"
 )
 
-const TAG string = "Simpleton"
-
-func dbg(s string, a ...interface{}) {
-	log.Printf("[%s] %s", TAG, fmt.Sprintf(s, a...))
-}
-
 type state struct {
-	Punter  uint64 `json:"punter"`
-	Punters uint64 `json:"punters"`
-	Map     Map    `json:"map"`
-	
-	Turn    uint64 `json:"turn"`
+	Punter  uint64
+	Punters uint64
+	Map     protocol.Map
+
+	Turn uint64
 }
 
-type Simpleton struct {
-}
+type Simpleton struct{}
 
-func (self Simpleton) Name() string {
+func (Simpleton) Name() string {
 	return "Simpleton"
 }
 
-func (self Simpleton) Setup(g *GameplayInput) *Ready {
-	dbg("Setup")
-	
-	s := state {
-		Punter: g.Punter,
-		Punters:g.Punters,
-		Map: g.Map,
-		
+func (Simpleton) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
+	glog.Infof("Setup")
+
+	s := state{
+		Punter:  setup.Punter,
+		Punters: setup.Punters,
+		Map:     setup.Map,
+
 		Turn: 0,
 	}
-	
-	return &Ready{
-		s.Punter,
-		EncodeState(s),
-	}
+
+	return &protocol.Ready{
+		Ready: s.Punter,
+		State: s,
+	}, nil
 }
 
-func (self Simpleton) Play(g *GameplayInput) *GameplayOutput {
-	dbg("Play")
-	
-	var state state
-	DecodeState(g, &state)
-	
-	state.Turn += 1
-	dbg("Turn: %d\n", state.Turn)
-	
-	return &GameplayOutput{
-		Move{
-			Pass: &Pass{
-				state.Punter,
+func (Simpleton) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.GameplayOutput, error) {
+	glog.Infof("Play")
+
+	var s state
+	if err := json.Unmarshal([]byte(jsonState), &s); err != nil {
+		return nil, fmt.Errorf("error unmarshaling state %s: %v", string(jsonState), err)
+	}
+
+	s.Turn++
+	glog.Infof("Turn: %d", s.Turn)
+
+	return &protocol.GameplayOutput{
+		Move: protocol.Move{
+			Pass: &protocol.Pass{
+				s.Punter,
 			},
 		},
-		EncodeState(state),
-	}
+		State: s,
+	}, nil
 }
 
-func (self Simpleton) Stop(g *GameplayInput) {
-	dbg("Stop", g)
-	
-	var state state
-	DecodeState(g, &state)
+func (Simpleton) Stop(stop *protocol.Stop, jsonState json.RawMessage) error {
+	glog.Infof("Stop: %+v", stop)
+
+	var s state
+	if err := json.Unmarshal([]byte(jsonState), &s); err != nil {
+		return fmt.Errorf("error unmarshaling state %s: %v", string(jsonState), err)
+	}
+
+	return nil
 }
 
 func main() {
-	Play(os.Stdin, os.Stdout, new(Simpleton))
+	flag.Set("logtostderr", "true")
+	flag.Parse()
+
+	var s Simpleton
+	if err := protocol.Play(os.Stdin, os.Stdout, &s); err != nil {
+		glog.Exitf("Play failed: %v", err)
+	}
 }
