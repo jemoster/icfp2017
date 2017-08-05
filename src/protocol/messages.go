@@ -1,6 +1,11 @@
 package protocol
 
+import (
+	"encoding/json"
+)
+
 type SiteID uint64
+type State json.RawMessage
 
 type Site struct {
 	ID SiteID `json:"id"`
@@ -33,7 +38,7 @@ type Setup struct {
 
 type Ready struct {
 	Ready uint64      `json:"ready"`
-	State interface{} `json:"state"`
+	State State `json:"state"`
 }
 
 type Claim struct {
@@ -47,20 +52,26 @@ type Pass struct {
 }
 
 type Move struct {
+	Setup
 	Claim *Claim `json:"claim,omitempty"`
 	Pass  *Pass  `json:"pass,omitempty"`
 }
 
 type GameplayInput struct {
-	Move struct {
+	Setup
+	Move *struct {
 		Moves []Move `json:"moves"`
 	} `json:"move"`
-	State interface{} `json:"state"`
+	Stop *struct {
+		Moves []Move `json:"moves"`
+		Scores []Score `json:"scores"`
+	} `json:"stop"`
+	State State `json:"state"`
 }
 
 type GameplayOutput struct {
 	Move
-	State interface{} `json:"state"`
+	State State `json:"state"`
 }
 
 type Score struct {
@@ -75,7 +86,7 @@ type Stop struct {
 
 type StopInput struct {
 	Stop  Stop        `json:"stop"`
-	State interface{} `json:"state"`
+	State State `json:"state"`
 }
 
 type Timeout struct {
