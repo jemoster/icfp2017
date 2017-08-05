@@ -24,5 +24,8 @@ simpleton-run: build
 walkbot-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./walk 9017
 
+brown-run: build
+	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/ai_olrobbrown.py 9019
+
 multiplay: build
 	docker run $(VOLS) --rm boxes $(PLAYER) 4 9053
