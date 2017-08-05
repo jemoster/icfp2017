@@ -2,18 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
-	"log"
 	"os"
 
+	"github.com/golang/glog"
 	"github.com/jemoster/icfp2017/src/protocol"
 )
-
-const TAG string = "Simpleton"
-
-func dbg(s string, a ...interface{}) {
-	log.Printf("[%s] %s", TAG, fmt.Sprintf(s, a...))
-}
 
 type state struct {
 	Punter  uint64
@@ -30,7 +25,7 @@ func (Simpleton) Name() string {
 }
 
 func (Simpleton) Setup(g *protocol.Setup) (*protocol.Ready, error) {
-	dbg("Setup")
+	glog.Infof("Setup")
 
 	s := state{
 		Punter:  g.Punter,
@@ -47,7 +42,7 @@ func (Simpleton) Setup(g *protocol.Setup) (*protocol.Ready, error) {
 }
 
 func (Simpleton) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.GameplayOutput, error) {
-	dbg("Play")
+	glog.Infof("Play")
 
 	var s state
 	if err := json.Unmarshal([]byte(jsonState), &s); err != nil {
@@ -55,7 +50,7 @@ func (Simpleton) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.G
 	}
 
 	s.Turn++
-	dbg("Turn: %d", s.Turn)
+	glog.Infof("Turn: %d", s.Turn)
 
 	return &protocol.GameplayOutput{
 		Move: protocol.Move{
@@ -68,7 +63,7 @@ func (Simpleton) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.G
 }
 
 func (Simpleton) Stop(stop *protocol.Stop, jsonState json.RawMessage) error {
-	dbg("Stop: %+v", stop)
+	glog.Infof("Stop: %+v", stop)
 
 	var s state
 	if err := json.Unmarshal([]byte(jsonState), &s); err != nil {
@@ -79,8 +74,11 @@ func (Simpleton) Stop(stop *protocol.Stop, jsonState json.RawMessage) error {
 }
 
 func main() {
+	flag.Set("logtostderr", "true")
+	flag.Parse()
+
 	var s Simpleton
 	if err := protocol.Play(os.Stdin, os.Stdout, &s); err != nil {
-		log.Fatalf("Play failed: %v", err)
+		glog.Exitf("Play failed: %v", err)
 	}
 }

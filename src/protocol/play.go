@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"strconv"
 )
 
@@ -81,8 +80,6 @@ func recv(r *bufio.Reader, v interface{}) error {
 
 // Play communicates with rw to play the next stage of the game.
 func Play(r io.Reader, w io.Writer, g Game) error {
-	log.Printf("\n\n\n")
-
 	h := HandshakeClientServer{Me: g.Name()}
 	if err := send(w, &h); err != nil {
 		return fmt.Errorf("failed sending handshake: %v", err)
