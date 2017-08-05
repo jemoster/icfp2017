@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"math"
 	"os"
 
 	"github.com/golang/glog"
@@ -43,12 +44,16 @@ func furthestNode(g *simple.UndirectedGraph, s *state) (protocol.SiteID, protoco
 
 		for _, site := range s.Map.Sites {
 			n := g.Node(int64(site.ID))
-			dist := uint64(shortest.WeightTo(n))
+			dist := shortest.WeightTo(n)
+			if math.IsInf(dist, 0) {
+				// Unreachable.
+				continue
+			}
 
-			if dist > furthest {
+			if uint64(dist) > furthest {
 				mine = m
 				target = site.ID
-				furthest = dist
+				furthest = uint64(dist)
 				path, _ = shortest.To(n)
 			}
 		}
