@@ -44,8 +44,6 @@ def format_send(msg):
 def read_structured(buffer):
     while ':' not in buffer:
         buffer += sys.stdin.read(1)
-        # sys.stderr.write("reading buffer: {}\r\n".format(buffer))
-        # sys.stderr.flush()
 
     buffer_size_txt = buffer.split(':', 1)[0]
     msg_size = int(buffer_size_txt)
@@ -53,8 +51,6 @@ def read_structured(buffer):
 
     while len(buffer) < min_buffer_size:
         buffer += sys.stdin.read(1)
-        # sys.stderr.write("reading buffer: {}\r\n".format(buffer))
-        # sys.stderr.flush()
 
     msg_txt = buffer[:min_buffer_size]
     buffer = buffer[min_buffer_size:]
