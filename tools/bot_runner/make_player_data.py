@@ -35,6 +35,7 @@ def main():
     parser.add_argument('--default', action='store', default=None, help='default bot to use')
     parser.add_argument('--server', action="store", default="punter.inf.ed.ac.uk",
                         help='The game server to connect to defaults to "punter.inf.ed.ac.uk"')
+    parser.add_argument('--record', action="store", help='directory to save playlog to')
     results = parser.parse_args()
 
     port = results.port
@@ -67,7 +68,7 @@ def main():
             bot = known_bots[bot]
 
         basename = '{}_{}_{}_'.format(port, run_time, num)
-        filename = os.path.join('data', 'multibot', basename)
+        filename = os.path.join(results.record, basename)
         cmd = " ".join(["python3", "-u", "tools/bot_runner/online_adapter.py", '"{}"'.format(bot), str(port), '--record', filename])
         print('calling: ', cmd)
         procs.append(subprocess.Popen(cmd, shell=True))
