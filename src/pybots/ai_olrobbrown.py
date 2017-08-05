@@ -1,9 +1,7 @@
 #!/usr/bin/env python -u
-from __future__ import print_function
-import sys
-import json
 import random
-from base_bot import PyBot
+from base_bot import PyBot, log
+
 
 class OlRobBrownBot(PyBot):
     def setup(self, setup):
@@ -96,34 +94,6 @@ class OlRobBrownBot(PyBot):
                 'prev_sites': prev_sites
             }
         }
-
-    def format_send(self, msg):
-        serialized_msg = json.dumps(msg)
-        return "{}:{}".format(len(serialized_msg), serialized_msg)
-
-    def read_structured(self, buffer):
-        while ':' not in buffer:
-            buffer += sys.stdin.read(1)
-
-        buffer_size_txt = buffer.split(':', 1)[0]
-        msg_size = int(buffer_size_txt)
-        min_buffer_size = len(buffer_size_txt) + msg_size + 1
-
-        while len(buffer) < min_buffer_size:
-            buffer += sys.stdin.read(1)
-
-        msg_txt = buffer[:min_buffer_size]
-        buffer = buffer[min_buffer_size:]
-        return json.loads(msg_txt.split(':', 1)[1]), buffer
-
-
-    def print_err(self, msg):
-        sys.stderr.write("{}\n".format(msg))
-        sys.stderr.flush()
-
-
-def log(s):
-    print(s, file=sys.stderr)
 
 
 if __name__ == '__main__':
