@@ -2,7 +2,7 @@ import argparse
 import socket
 import json
 from time import sleep
-import random
+import subprocess
 
 
 class OfflineAdapter:
@@ -25,6 +25,7 @@ class OfflineAdapter:
         self._socket.close()
 
     def _send(self, msg):
+        print(">>  ", msg)
         self._socket.send(msg)
         sleep(1.0)
 
@@ -42,14 +43,21 @@ class OfflineAdapter:
 
         msg_txt = self.buffer[:min_buffer_size]
         self.buffer = self.buffer[min_buffer_size:]
-        return json.loads(msg_txt.split(':', 1)[1])
+        msg = json.loads(msg_txt.split(':', 1)[1])
+        print("<<  ", json.dumps(msg))
+        return msg, msg_txt
 
 
 def test_send(adapter, msg):
     serialized_msg = json.dumps(msg)
     msg = "{}:{}".format(len(serialized_msg), serialized_msg).encode()
-    print('>>  ', msg)
+    print('>>  ', json.dumps(msg))
     adapter._send(msg)
+
+
+def format_as_message(msg_dict):
+    serialized_msg = json.dumps(msg_dict)
+    return "{}:{}".format(len(serialized_msg), serialized_msg).encode()
 
 
 def ranked(scores):
@@ -60,7 +68,13 @@ def ranked(scores):
     """
     return sorted(scores, key=lambda x: x['score'], reverse=True)
 
+def get_dict_from_message(msg):
+    buffer_size_txt = msg.split(':', 1)[0]
+    msg_size = int(buffer_size_txt)
+    min_buffer_size = len(buffer_size_txt) + 1 + msg_size
 
+    msg_txt = msg[:min_buffer_size]
+    return json.loads(msg_txt.split(':', 1)[1])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='ICFP 2017 Online Adapter')
@@ -75,28 +89,44 @@ if __name__ == "__main__":
     adapter = OfflineAdapter(results.server, results.port, results.exe)
     adapter.connect()
     try:
-        test_send(adapter, {'me': 'unhinged_muffin'})
+        proc = subprocess.Popen(results.exe.split(' '), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
-        # Wait for server response
-        handshake = adapter._receive()
-        print("<<  ", handshake)
+        # Handshake with server and bot
+        handshake = get_dict_from_message(proc.stdout.readline().decode())
+        adapter._send(format_as_message(handshake))
+        handshake, _ = adapter._receive()
+        proc.stdin.write(format_as_message(handshake))
+        proc.stdin.flush()
 
+        # Get Setup from server
         setup = None
         while not setup:
             setup = adapter._receive()
-        print("<<  ", setup)
-        
-        possible_claims = []
-        for river in setup['map']['rivers']:
-            possible_claims.append((river['source'], river['target']))
+        punter_id = setup[0]['punter']
 
-        punter_id = setup['punter']
+        # Setup Bot
+        proc.stdin.write(setup[1].encode())
+        proc.stdin.flush()
 
-        test_send(adapter, {'ready': punter_id})
+        # Get Bot's setup
+        bot_setup = get_dict_from_message(proc.stdout.readline().decode())
+        game_state = bot_setup['state']
+        bot_setup.pop('state')
+        adapter._send(format_as_message(bot_setup))
 
         while True:
-            play = adapter._receive()
-            print("<<  ", play)
+            play, raw = adapter._receive()
+
+            proc = subprocess.Popen(results.exe.split(' '), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+
+            # Handshake
+            get_dict_from_message(proc.stdout.readline().decode())
+            proc.stdin.write(format_as_message(handshake))
+            proc.stdin.flush()
+
+            play['state'] = game_state
+            proc.stdin.write(format_as_message(play))
+            proc.stdin.flush()
 
             if 'stop' in play:
                 for player in ranked(play['stop']['scores']):
@@ -107,15 +137,10 @@ if __name__ == "__main__":
             if 'timeout' in play:
                 continue
 
-            for move in play['move']['moves']:
-                if 'pass' in move:
-                    continue
-                move = move['claim']
-                possible_claims.remove((move['source'], move['target']))
-
-            claim = random.choice(possible_claims)
-            test_send(adapter, {"claim": {"punter": punter_id, 'source': claim[0], 'target': claim[1]}})
-            # test_send(adapter, {'move': {"pass": {"punter": punter_id}}})
+            move = get_dict_from_message(proc.stdout.readline().decode())
+            game_state = move['state']
+            move.pop('state')
+            adapter._send(format_as_message(move))
 
     finally:
         adapter.disconnect()
