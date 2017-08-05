@@ -103,6 +103,7 @@ class OfflineAdapter:
 
         finally:
             self.disconnect()
+            self.log_file.close()
 
 
 def format_as_message(msg_dict):
