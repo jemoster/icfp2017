@@ -2,6 +2,8 @@
 
 # Note that this requires you have the directory checked out to /tmp/maps
 MAPS=-v /tmp/maps:/app/github.com/jemoster/icfp2017/maps
+PLAYLOG=-v /tmp/playlogs:/app/github.com/jemoster/icfp2017/data
+VOLS=$(MAPS) $(PLAYLOG)
 RUNNER=python3 -u tools/bot_runner/online_adapter.py
 PLAYER=./tools/bot_runner/make_player_data.py
 
