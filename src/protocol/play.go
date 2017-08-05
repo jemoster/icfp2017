@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"bufio"
-	//	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,14 +14,8 @@ func writeMessage(w io.Writer, b []byte) error {
 		return fmt.Errorf("failed to write prefix: %v", err)
 	}
 
-	did, err := w.Write(b)
-
-	if err != nil {
-		return fmt.Errorf("error writing to buffer: %v", err)
-	}
-
-	if did != len(b) {
-		return fmt.Errorf("did not write all bytes (have %d, wrote %d)", len(b), did)
+	if _, err := w.Write(b); err != nil {
+		return fmt.Errorf("error writing buffer: %v", err)
 	}
 
 	return nil
@@ -45,7 +38,9 @@ func readMessage(r *bufio.Reader) ([]byte, error) {
 	}
 
 	b = make([]byte, l)
-	_, err = io.ReadFull(r, b)
+	if _, err = io.ReadFull(r, b); err != nil {
+		return nil, fmt.Errorf("error reading message: %v", err)
+	}
 	return b, err
 }
 
@@ -60,9 +55,8 @@ func sendResponse(w io.Writer, v interface{}) error {
 
 func send(w io.Writer, v interface{}) error {
 	b, err := json.Marshal(v)
-
 	if err != nil {
-		return fmt.Errorf("failed marshaling: %v, %s", err, string(b))
+		return fmt.Errorf("failed marshaling %+v: %v", v, err)
 	}
 
 	if err := writeMessage(w, b); err != nil {
@@ -72,10 +66,8 @@ func send(w io.Writer, v interface{}) error {
 	return nil
 }
 
-func recv(r io.Reader, v interface{}) error {
-	br := bufio.NewReader(r)
-	b, err := readMessage(br)
-
+func recv(r *bufio.Reader, v interface{}) error {
+	b, err := readMessage(r)
 	if err != nil {
 		return fmt.Errorf("failed to read message: %v", err)
 	}
@@ -85,18 +77,6 @@ func recv(r io.Reader, v interface{}) error {
 	}
 
 	return nil
-}
-
-func EncodeState(v interface{}) State {
-	p, err := json.Marshal(v)
-	if err != nil {
-		panic(err)
-	}
-	return p
-}
-
-func DecodeState(i *GameplayInput, v interface{}) error {
-	return json.Unmarshal(i.State, v)
 }
 
 // Play communicates with rw to play the next stage of the game.
@@ -111,34 +91,44 @@ func Play(r io.Reader, w io.Writer, g Game) error {
 		return fmt.Errorf("failed sending handshake: %v", err)
 	}
 
+	br := bufio.NewReader(r)
+
 	var hr HandshakeServerClient
-	err = recv(r, &hr)
+	err = recv(br, &hr)
 	if err != nil {
 		return fmt.Errorf("failed receiving handshake: %v", err)
 	}
 
-	var input GameplayInput
-	err = recv(r, &input)
-	if err != nil {
-		return fmt.Errorf("Failed to receive gameplay input: %v", err)
+	var input CombinedInput
+	if err = recv(br, &input); err != nil {
+		return fmt.Errorf("failed to receive gameplay input: %v", err)
 	}
 
-	if input.State != nil {
-		if input.Stop != nil {
-			g.Stop(&input)
-		} else {
-			res := g.Play(&input)
-			err := send(w, &res)
-			if err != nil {
-				return fmt.Errorf("Failed to send move: %v", err)
-			}
-		}
-	} else {
-		res := g.Setup(&input)
-		err := send(w, &res)
+	switch {
+	case input.Setup != nil:
+		r, err := g.Setup(input.Setup)
 		if err != nil {
-			return fmt.Errorf("Failed to send ready: %v", err)
+			return fmt.Errorf("setup failed: %v", err)
 		}
+
+		if err := send(w, r); err != nil {
+			return fmt.Errorf("failed to send ready: %v", err)
+		}
+	case input.Move != nil:
+		r, err := g.Play(input.Move.Moves, input.State)
+		if err != nil {
+			return fmt.Errorf("move failed: %v", err)
+		}
+
+		if err := send(w, r); err != nil {
+			return fmt.Errorf("failed to send move: %v", err)
+		}
+	case input.Stop != nil:
+		if err := g.Stop(input.Stop, input.State); err != nil {
+			return fmt.Errorf("stop failed: %v", err)
+		}
+	default:
+		return fmt.Errorf("unknown input %+v", input)
 	}
 
 	return nil

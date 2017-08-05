@@ -1,11 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 
-	. "github.com/jemoster/icfp2017/src/protocol"
+	"github.com/jemoster/icfp2017/src/protocol"
 )
 
 const TAG string = "Simpleton"
@@ -15,21 +16,20 @@ func dbg(s string, a ...interface{}) {
 }
 
 type state struct {
-	Punter  uint64 `json:"punter"`
-	Punters uint64 `json:"punters"`
-	Map     Map    `json:"map"`
+	Punter  uint64
+	Punters uint64
+	Map     protocol.Map
 
-	Turn uint64 `json:"turn"`
+	Turn uint64
 }
 
-type Simpleton struct {
-}
+type Simpleton struct{}
 
-func (self Simpleton) Name() string {
+func (Simpleton) Name() string {
 	return "Simpleton"
 }
 
-func (self Simpleton) Setup(g *GameplayInput) *Ready {
+func (Simpleton) Setup(g *protocol.Setup) (*protocol.Ready, error) {
 	dbg("Setup")
 
 	s := state{
@@ -40,38 +40,47 @@ func (self Simpleton) Setup(g *GameplayInput) *Ready {
 		Turn: 0,
 	}
 
-	return &Ready{
-		s.Punter,
-		EncodeState(s),
-	}
+	return &protocol.Ready{
+		Ready: s.Punter,
+		State: s,
+	}, nil
 }
 
-func (self Simpleton) Play(g *GameplayInput) *GameplayOutput {
+func (Simpleton) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.GameplayOutput, error) {
 	dbg("Play")
 
-	var state state
-	DecodeState(g, &state)
+	var s state
+	if err := json.Unmarshal([]byte(jsonState), &s); err != nil {
+		return nil, fmt.Errorf("error unmarshaling state %s: %v", string(jsonState), err)
+	}
 
-	state.Turn += 1
-	dbg("Turn: %d\n", state.Turn)
+	s.Turn++
+	dbg("Turn: %d", s.Turn)
 
-	return &GameplayOutput{
-		Move{
-			Pass: &Pass{
-				state.Punter,
+	return &protocol.GameplayOutput{
+		Move: protocol.Move{
+			Pass: &protocol.Pass{
+				s.Punter,
 			},
 		},
-		EncodeState(state),
-	}
+		State: s,
+	}, nil
 }
 
-func (self Simpleton) Stop(g *GameplayInput) {
-	dbg("Stop", g)
+func (Simpleton) Stop(stop *protocol.Stop, jsonState json.RawMessage) error {
+	dbg("Stop: %+v", stop)
 
-	var state state
-	DecodeState(g, &state)
+	var s state
+	if err := json.Unmarshal([]byte(jsonState), &s); err != nil {
+		return fmt.Errorf("error unmarshaling state %s: %v", string(jsonState), err)
+	}
+
+	return nil
 }
 
 func main() {
-	Play(os.Stdin, os.Stdout, new(Simpleton))
+	var s Simpleton
+	if err := protocol.Play(os.Stdin, os.Stdout, &s); err != nil {
+		log.Fatalf("Play failed: %v", err)
+	}
 }
