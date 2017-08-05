@@ -38,7 +38,7 @@ class OfflineAdapter:
     def receive(self, blocking=True):
         while ':' not in self.buffer:
             self.buffer += self._socket.recv(self.buffer_size).decode()
-
+            
         buffer_size_txt = self.buffer.split(':', 1)[0]
         msg_size = int(buffer_size_txt)
         min_buffer_size = len(buffer_size_txt) + 1 + msg_size
@@ -60,10 +60,11 @@ class OfflineAdapter:
         self.connect()
         try:
             bot = Bot(self.exe)
-
+            
             # Handshake with server and bot
             handshake = bot.read()
             self.send(handshake)
+            
             handshake = self.receive()
             bot.write(handshake)
 
@@ -82,9 +83,13 @@ class OfflineAdapter:
 
             while True:
                 play = self.receive()
-
+                
                 bot = Bot(self.exe)
-                bot.read()  # Ignore handshake and use the one we got from the server earlier
+                
+                handshake = bot.read()
+                self.send(handshake)
+                
+                handshake = self.receive()
                 bot.write(handshake)
 
                 play['state'] = game_state
@@ -137,6 +142,7 @@ class Bot:
     def read(self, blocking=True):
         while ':' not in self.buffer:
             self.buffer += self.proc.stdout.read(1).decode()
+            
 
         buffer_size_txt = self.buffer.split(':', 1)[0]
         msg_size = int(buffer_size_txt)

@@ -2,7 +2,7 @@ package protocol
 
 import (
 	"bufio"
-	"bytes"
+//	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -14,9 +14,18 @@ func writeMessage(w io.Writer, b []byte) error {
 	if _, err := fmt.Fprintf(w, "%d:", len(b)); err != nil {
 		return fmt.Errorf("failed to write prefix: %v", err)
 	}
-
-	_, err := w.Write(b)
-	return err
+	
+	did, err := w.Write(b)
+	
+	if err != nil {
+		return fmt.Errorf("error writing to buffer: %v", err)
+	}
+	
+	if did != len(b) {
+		return fmt.Errorf("did not write all bytes (have %d, wrote %d)", len(b), did)
+	}
+	
+	return nil
 }
 
 func readMessage(r *bufio.Reader) ([]byte, error) {
@@ -49,83 +58,88 @@ func sendResponse(w io.Writer, v interface{}) error {
 	return writeMessage(w, b)
 }
 
-// Play communicates with rw to play the next stage of the game.
-func Play(r io.Reader, w io.Writer, g Game) error {
-	log.Printf("Play: sending handshake")
-	h := HandshakeClientServer{Me: g.Name()}
-	b, err := json.Marshal(&h)
+func send(w io.Writer, v interface{}) error {
+	b, err := json.Marshal(v)
+	
 	if err != nil {
-		return fmt.Errorf("failed to marshal handshake: %v, %s", err, string(b))
+		return fmt.Errorf("failed marshaling: %v, %s", err, string(b))
 	}
 
 	if err := writeMessage(w, b); err != nil {
-		return fmt.Errorf("failed to write handshake: %v", err)
+		return fmt.Errorf("failed to write message: %v", err)
 	}
 
-	log.Printf("Play: getting handshake response")
+	return nil
+}
 
+func recv(r io.Reader, v interface{}) error {
 	br := bufio.NewReader(r)
-
-	// Handshake completion.
-	b, err = readMessage(br)
+	b, err := readMessage(br)
+	
 	if err != nil {
-		return fmt.Errorf("failed to read handshake completion: %v", err)
+		return fmt.Errorf("failed to read message: %v", err)
 	}
 
+	if err := json.Unmarshal(b, v); err != nil {
+		return fmt.Errorf("failed to unmarshal: %v, %s", err, string(b))
+	}
+	
+	return nil
+}
+
+func EncodeState(v interface{}) State {
+	p, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
+
+func DecodeState(i *GameplayInput, v interface{}) error {
+	return json.Unmarshal(i.State, v);
+}
+
+// Play communicates with rw to play the next stage of the game.
+func Play(r io.Reader, w io.Writer, g Game) error {
+	log.Printf("\n\n\n")
+	
+	var err error
+	
+	h := HandshakeClientServer{Me: g.Name()}
+	err = send(w, &h)
+	if err != nil {
+		return fmt.Errorf("failed sending handshake: %v", err)
+	}
+	
 	var hr HandshakeServerClient
-	if err := json.Unmarshal(b, &hr); err != nil {
-		return fmt.Errorf("failed to unmarshal handshake: %v, %s", err, string(b))
-	}
-
-	log.Printf("Play: getting command")
-
-	// The next message is either Setup, GameplayInput, or StopInput.
-	b, err = readMessage(br)
+	err = recv(r, &hr)
 	if err != nil {
-		return fmt.Errorf("failed to read command: %v", err)
+		return fmt.Errorf("failed receiving handshake: %v", err)
 	}
-
-	log.Printf("Play: received command: %s", string(b))
-
-	// Unmarshal will allow missing and unknown fields, so we can't just
-	// attempt to unmarshal each type. Instead, perform weak type detection
-	// based on unique keys from each message.
-
-	// Setup?
-	if bytes.Contains(b, []byte(`"map"`)) {
-		var setup Setup
-		if err := json.Unmarshal(b, &setup); err != nil {
-			return fmt.Errorf("failed to unmarshal setup: %v, %s", err, string(b))
+	
+	var input GameplayInput
+	err = recv(r, &input)
+	if err != nil {
+		return fmt.Errorf("Failed to receive gameplay input: %v", err)
+	}
+	
+	if input.State != nil {
+		if input.Stop != nil {
+			g.Stop(&input)
+		} else {
+			res := g.Play(&input)
+			err := send(w, &res)
+			if err != nil {
+				return fmt.Errorf("Failed to send move: %v", err)
+			}
 		}
-
-		log.Printf("Play: Setup")
-		return sendResponse(w, g.Setup(&setup))
-	}
-
-	// Stop?
-	if bytes.Contains(b, []byte(`"stop"`)) {
-		var stop StopInput
-		if err := json.Unmarshal(b, &stop); err != nil {
-			return fmt.Errorf("failed to unmarshal stop input: %v, %s", err, string(b))
+	} else {
+		res := g.Setup(&input)
+		err := send(w, &res)
+		if err != nil {
+			return fmt.Errorf("Failed to send ready: %v", err)
 		}
-
-		log.Printf("Play: Stop")
-		g.Stop(&stop)
-		return nil
 	}
-
-	// GameplayInput?
-	//
-	// N.B. StopInput also contains "move", so this must come afterwards.
-	if bytes.Contains(b, []byte(`"move"`)) {
-		var gi GameplayInput
-		if err := json.Unmarshal(b, &gi); err != nil {
-			return fmt.Errorf("failed to unmarshal game input: %v, %s", err, string(b))
-		}
-
-		log.Printf("Play: Game")
-		return sendResponse(w, g.Play(&gi))
-	}
-
-	return fmt.Errorf("unknown command: %s", string(b))
+	
+	return nil
 }
