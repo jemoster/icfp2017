@@ -9,7 +9,9 @@ class OfflineAdapter:
     def __init__(self, server, port, exe):
         self.server = server
         self.port = port
+        self.exe = exe
         self.buffer_size = 1024
+        self.punter_id = None
 
         self._socket = None
         self.buffer = ''
@@ -24,12 +26,13 @@ class OfflineAdapter:
         print('Disconnecting')
         self._socket.close()
 
-    def _send(self, msg):
+    def send(self, msg):
+        msg = format_as_message(msg)
         print(">>  ", msg)
         self._socket.send(msg)
         sleep(1.0)
 
-    def _receive(self):
+    def receive(self):
         while ':' not in self.buffer:
             self.buffer += self._socket.recv(self.buffer_size).decode()
 
@@ -45,14 +48,57 @@ class OfflineAdapter:
         self.buffer = self.buffer[min_buffer_size:]
         msg = json.loads(msg_txt.split(':', 1)[1])
         print("<<  ", json.dumps(msg))
-        return msg, msg_txt
+        return msg
 
+    def run(self):
+        self.connect()
+        try:
+            bot = Bot(self.exe)
 
-def test_send(adapter, msg):
-    serialized_msg = json.dumps(msg)
-    msg = "{}:{}".format(len(serialized_msg), serialized_msg).encode()
-    print('>>  ', json.dumps(msg))
-    adapter._send(msg)
+            # Handshake with server and bot
+            handshake = bot.read()
+            self.send(handshake)
+            handshake = self.receive()
+            bot.write(handshake)
+
+            # Get Setup from server
+            setup = None
+            while not setup:
+                setup = self.receive()
+            self.punter_id = setup['punter']
+
+            # Setup Bot
+            bot.write(setup)
+
+            # Get Bot's setup
+            bot_setup = bot.read()
+            game_state = bot_setup['state']
+            bot_setup.pop('state')
+            self.send(bot_setup)
+
+            while True:
+                play = self.receive()
+
+                bot = Bot(results.exe)
+                bot.read()  # Ignore handshake and use the one we got from the server earlier
+                bot.write(handshake)
+
+                play['state'] = game_state
+                bot.write(play)
+
+                if 'stop' in play:
+                    return ranked(play['stop']['scores'])
+
+                if 'timeout' in play:
+                    continue
+
+                move = bot.read()
+                game_state = move['state']
+                move.pop('state')
+                self.send(move)
+
+        finally:
+            self.disconnect()
 
 
 def format_as_message(msg_dict):
@@ -61,12 +107,8 @@ def format_as_message(msg_dict):
 
 
 def ranked(scores):
-    """
-    [{'score': 100, 'punter': 0}, ...]
-    :param scores:
-    :return:
-    """
     return sorted(scores, key=lambda x: x['score'], reverse=True)
+
 
 def get_dict_from_message(msg):
     buffer_size_txt = msg.split(':', 1)[0]
@@ -75,6 +117,19 @@ def get_dict_from_message(msg):
 
     msg_txt = msg[:min_buffer_size]
     return json.loads(msg_txt.split(':', 1)[1])
+
+
+class Bot:
+    def __init__(self, exe):
+        self.proc = subprocess.Popen(exe.split(' '), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+
+    def write(self, msg):
+        self.proc.stdin.write(format_as_message(msg))
+        self.proc.stdin.flush()
+
+    def read(self):
+        return get_dict_from_message(self.proc.stdout.readline().decode())
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='ICFP 2017 Online Adapter')
@@ -87,60 +142,8 @@ if __name__ == "__main__":
     results = parser.parse_args()
 
     adapter = OfflineAdapter(results.server, results.port, results.exe)
-    adapter.connect()
-    try:
-        proc = subprocess.Popen(results.exe.split(' '), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+    scores = adapter.run()
 
-        # Handshake with server and bot
-        handshake = get_dict_from_message(proc.stdout.readline().decode())
-        adapter._send(format_as_message(handshake))
-        handshake, _ = adapter._receive()
-        proc.stdin.write(format_as_message(handshake))
-        proc.stdin.flush()
-
-        # Get Setup from server
-        setup = None
-        while not setup:
-            setup = adapter._receive()
-        punter_id = setup[0]['punter']
-
-        # Setup Bot
-        proc.stdin.write(setup[1].encode())
-        proc.stdin.flush()
-
-        # Get Bot's setup
-        bot_setup = get_dict_from_message(proc.stdout.readline().decode())
-        game_state = bot_setup['state']
-        bot_setup.pop('state')
-        adapter._send(format_as_message(bot_setup))
-
-        while True:
-            play, raw = adapter._receive()
-
-            proc = subprocess.Popen(results.exe.split(' '), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-
-            # Handshake
-            get_dict_from_message(proc.stdout.readline().decode())
-            proc.stdin.write(format_as_message(handshake))
-            proc.stdin.flush()
-
-            play['state'] = game_state
-            proc.stdin.write(format_as_message(play))
-            proc.stdin.flush()
-
-            if 'stop' in play:
-                for player in ranked(play['stop']['scores']):
-                    player_name = 'punter:' if player['punter'] != punter_id else "me:    "
-                    print('{} {punter}, score: {score}'.format(player_name, **player))
-                break
-
-            if 'timeout' in play:
-                continue
-
-            move = get_dict_from_message(proc.stdout.readline().decode())
-            game_state = move['state']
-            move.pop('state')
-            adapter._send(format_as_message(move))
-
-    finally:
-        adapter.disconnect()
+    for player in scores:
+        player_name = 'punter:' if player['punter'] != adapter.punter_id else "me:    "
+        print('{} {punter}, score: {score}'.format(player_name, **player))
