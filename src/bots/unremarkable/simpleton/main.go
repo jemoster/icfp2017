@@ -24,13 +24,13 @@ func (Simpleton) Name() string {
 	return "Simpleton"
 }
 
-func (Simpleton) Setup(g *protocol.Setup) (*protocol.Ready, error) {
+func (Simpleton) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	glog.Infof("Setup")
 
 	s := state{
-		Punter:  g.Punter,
-		Punters: g.Punters,
-		Map:     g.Map,
+		Punter:  setup.Punter,
+		Punters: setup.Punters,
+		Map:     setup.Map,
 
 		Turn: 0,
 	}
