@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/golang/glog"
-	"github.com/jemoster/icfp2017/src/graph"
 	"github.com/jemoster/icfp2017/src/protocol"
 )
 
