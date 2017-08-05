@@ -9,6 +9,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/jemoster/icfp2017/src/graph"
 	"github.com/jemoster/icfp2017/src/protocol"
+	gograph "gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
@@ -17,7 +18,8 @@ type state struct {
 	Punters uint64
 	Map     protocol.Map
 
-	Turn uint64
+	Turn  uint64
+	Moves []protocol.Move
 }
 
 type LongWalk struct{}
@@ -28,24 +30,31 @@ func (LongWalk) Name() string {
 
 // furthestNode returns the mine and site that are furthest apart, and how far
 // they are.
-func furthestNode(g *simple.UndirectedGraph, s *state) (protocol.SiteID, protocol.SiteID, uint64) {
-	distances := graph.ShortestDistances(g, s.Map.Mines)
+func furthestNode(g *simple.UndirectedGraph, s *state) (protocol.SiteID, protocol.SiteID, uint64, []gograph.Node) {
+	var (
+		mine     protocol.SiteID
+		target   protocol.SiteID
+		furthest uint64
+		path     []gograph.Node
+	)
 
-	var mine protocol.SiteID
-	var target protocol.SiteID
-	var furthest uint64
+	for _, m := range s.Map.Mines {
+		shortest := graph.ShortestFrom(g, m)
 
-	for m, sites := range distances {
-		for site, dist := range sites {
+		for _, site := range s.Map.Sites {
+			n := g.Node(int64(site.ID))
+			dist := uint64(shortest.WeightTo(n))
+
 			if dist > furthest {
 				mine = m
-				target = site
+				target = site.ID
 				furthest = dist
+				path, _ = shortest.To(n)
 			}
 		}
 	}
 
-	return mine, target, furthest
+	return mine, target, furthest, path
 }
 
 func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
@@ -60,8 +69,20 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	}
 
 	g := graph.Build(&s.Map)
-	mine, target, dist := furthestNode(g, s)
-	glog.Infof("Furthest site: %d -> %d: %d", mine, target, dist)
+	mine, target, dist, path := furthestNode(g, s)
+	glog.Infof("Furthest site: %d -> %d: %d, path: %+v", mine, target, dist, path)
+
+	s.Moves = make([]protocol.Move, dist)
+	for i := range s.Moves {
+		s.Moves[i] = protocol.Move{
+			Claim: &protocol.Claim{
+				Punter: s.Punter,
+				Source: protocol.SiteID(path[i].ID()),
+				Target: protocol.SiteID(path[i+1].ID()),
+			},
+		}
+		glog.Infof("move %d: %+v", i, s.Moves[i].Claim)
+	}
 
 	return &protocol.Ready{
 		Ready: s.Punter,
@@ -77,15 +98,24 @@ func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 		return nil, fmt.Errorf("error unmarshaling state %s: %v", string(jsonState), err)
 	}
 
-	s.Turn++
 	glog.Infof("Turn: %d", s.Turn)
 
-	return &protocol.GameplayOutput{
-		Move: protocol.Move{
+	var move protocol.Move
+	if s.Turn < uint64(len(s.Moves)) {
+		move = s.Moves[s.Turn]
+	} else {
+		move = protocol.Move{
 			Pass: &protocol.Pass{
 				s.Punter,
 			},
-		},
+		}
+	}
+	glog.Infof("Playing: %+v", move)
+
+	s.Turn++
+
+	return &protocol.GameplayOutput{
+		Move:  move,
 		State: s,
 	}, nil
 }
