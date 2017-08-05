@@ -6,7 +6,7 @@ import subprocess
 
 
 class OfflineAdapter:
-    def __init__(self, server, port, exe):
+    def __init__(self, server, port, exe, log=None):
         self.server = server
         self.port = port
         self.exe = exe
@@ -16,19 +16,22 @@ class OfflineAdapter:
         self._socket = None
         self.buffer = ''
 
+        self.log_file = None
+        if log:
+            self.log_file = open(log, 'w')
+
     def connect(self):
-        print('Connecting to {}:{}'.format(self.server, self.port))
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect((self.server, self.port))
-        print('Connected')
 
     def disconnect(self):
-        print('Disconnecting')
         self._socket.close()
 
     def send(self, msg):
-        msg = format_as_message(msg)
         print(">>  ", msg)
+        if self.log_file:
+            self.log_file.write(">> {}\n".format(msg))
+        msg = format_as_message(msg)
         self._socket.send(msg)
         sleep(1.0)
 
@@ -49,6 +52,8 @@ class OfflineAdapter:
         self.buffer = self.buffer[min_buffer_size:]
         msg = json.loads(msg_txt.split(':', 1)[1])
         print("<<  ", json.dumps(msg))
+        if self.log_file:
+            self.log_file.write("<< {}\n".format(msg))
         return msg
 
     def run(self):
@@ -78,7 +83,7 @@ class OfflineAdapter:
             while True:
                 play = self.receive()
 
-                bot = Bot(results.exe)
+                bot = Bot(self.exe)
                 bot.read()  # Ignore handshake and use the one we got from the server earlier
                 bot.write(handshake)
 
@@ -98,6 +103,7 @@ class OfflineAdapter:
 
         finally:
             self.disconnect()
+            self.log_file.close()
 
 
 def format_as_message(msg_dict):
@@ -121,16 +127,33 @@ def get_dict_from_message(msg):
 class Bot:
     def __init__(self, exe):
         self.proc = subprocess.Popen(exe.split(' '), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+        self.buffer = ''
 
     def write(self, msg):
         self.proc.stdin.write(format_as_message(msg))
         self.proc.stdin.flush()
 
-    def read(self):
-        return get_dict_from_message(self.proc.stdout.readline().decode())
+    def read(self, blocking=True):
+        while ':' not in self.buffer:
+            self.buffer += self.proc.stdout.read(1).decode()
+
+        buffer_size_txt = self.buffer.split(':', 1)[0]
+        msg_size = int(buffer_size_txt)
+        min_buffer_size = len(buffer_size_txt) + 1 + msg_size
+
+        while len(self.buffer) < min_buffer_size:
+            self.buffer += self.proc.stdout.read(1).decode()
+            if not blocking:
+                return
+
+        msg_txt = self.buffer[:min_buffer_size]
+        self.buffer = self.buffer[min_buffer_size:]
+        msg = json.loads(msg_txt.split(':', 1)[1])
+
+        return msg
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description='ICFP 2017 Online Adapter')
 
     parser.add_argument('exe', action="store", help='The executable to evaluate')
@@ -146,3 +169,6 @@ if __name__ == "__main__":
     for player in scores:
         player_name = 'punter:' if player['punter'] != adapter.punter_id else "me:    "
         print('{} {punter}, score: {score}'.format(player_name, **player))
+
+if __name__ == "__main__":
+    main()
