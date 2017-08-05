@@ -37,8 +37,8 @@ type Setup struct {
 }
 
 type Ready struct {
-	Ready uint64      `json:"ready"`
-	State State `json:"state"`
+	Ready uint64 `json:"ready"`
+	State State  `json:"state"`
 }
 
 type Claim struct {
@@ -63,7 +63,7 @@ type GameplayInput struct {
 		Moves []Move `json:"moves"`
 	} `json:"move"`
 	Stop *struct {
-		Moves []Move `json:"moves"`
+		Moves  []Move  `json:"moves"`
 		Scores []Score `json:"scores"`
 	} `json:"stop"`
 	State State `json:"state"`
@@ -85,7 +85,7 @@ type Stop struct {
 }
 
 type StopInput struct {
-	Stop  Stop        `json:"stop"`
+	Stop  Stop  `json:"stop"`
 	State State `json:"state"`
 }
 

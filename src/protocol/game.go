@@ -7,7 +7,7 @@ package protocol
 type Game interface {
 	// Name returns the name of the player.
 	Name() string
-	
+
 	// Setup is called to perform the setup stage.
 	Setup(s *GameplayInput) *Ready
 
