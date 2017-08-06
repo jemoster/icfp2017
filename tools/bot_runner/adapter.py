@@ -42,7 +42,7 @@ class OfflineAdapter:
         self._socket.close()
 
     def send(self, msg):
-        # print(">>  {}".format(json.dumps(msg)))
+        print(">>  {}".format(json.dumps(msg)))
         if self.log_file:
             self.log_file.write(">> {}\n".format(json.dumps(msg)))
         msg = format_as_message(msg)
@@ -65,7 +65,7 @@ class OfflineAdapter:
         msg_txt = self.buffer[:min_buffer_size]
         self.buffer = self.buffer[min_buffer_size:]
         msg = json.loads(msg_txt.split(':', 1)[1])
-        # print("<<  {}".format(json.dumps(msg)))
+        print("<<  {}".format(json.dumps(msg)))
         if self.log_file:
             self.log_file.write("<< {}\n".format(json.dumps(msg)))
         return msg
@@ -191,7 +191,7 @@ def get_metrics(filename):
 
         scores = score['stop']['scores']
         rank = get_rank(punter_id, scores)
-        return rank, len(scores), name, metadata
+        return rank, len(scores), name, scores, metadata
 
 
 def get_rank(punter_id, scores):
