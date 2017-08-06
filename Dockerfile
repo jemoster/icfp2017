@@ -38,3 +38,4 @@ RUN go build github.com/jemoster/icfp2017/src/bots/akesling/brownian
 RUN go build github.com/jemoster/icfp2017/src/bots/akesling/strategery
 RUN go build github.com/jemoster/icfp2017/src/bots/cdfox/blob
 RUN go build github.com/jemoster/icfp2017/src/bots/punter76
+RUN go build github.com/jemoster/icfp2017/src/bots/punter2
