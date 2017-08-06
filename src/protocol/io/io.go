@@ -1,12 +1,13 @@
 package io
 
 import (
-	"io"
-	"fmt"
-	"log"
 	"bufio"
-	"strconv"
 	"encoding/json"
+	"fmt"
+	"io"
+	"strconv"
+
+	"github.com/golang/glog"
 )
 
 func WriteMessage(w io.Writer, b []byte) error {
@@ -49,7 +50,9 @@ func Send(w io.Writer, v interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed marshaling %+v: %v", v, err)
 	}
-	log.Printf("Send(%T): %s\n", v, string(b))
+
+	glog.V(1).Infof("Send(%T): %s\n", v, string(b))
+
 	if err := WriteMessage(w, b); err != nil {
 		return fmt.Errorf("failed to write message: %v", err)
 	}
@@ -62,7 +65,9 @@ func Recv(r *bufio.Reader, v interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed to read message: %v", err)
 	}
-	log.Printf("Recv(%T): %s\n", v, string(b))
+
+	glog.V(1).Infof("Recv(%T): %s\n", v, string(b))
+
 	if err := json.Unmarshal(b, v); err != nil {
 		return fmt.Errorf("failed to unmarshal: %v, %s", err, string(b))
 	}

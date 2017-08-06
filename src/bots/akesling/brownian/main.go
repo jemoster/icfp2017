@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"os"
 	"math/rand"
+	"os"
 
 	"github.com/golang/glog"
 	"github.com/jemoster/icfp2017/src/graph"
@@ -69,7 +69,7 @@ func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move, s *state) {
 				g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
 			claimedEdge.IsOwned = true
 			claimedEdge.Punter = move.Claim.Punter
-			if (move.Claim.Punter == s.Punter) {
+			if move.Claim.Punter == s.Punter {
 				claimedEdge.W = 0
 			} else {
 				claimedEdge.W = 1000
@@ -82,8 +82,8 @@ func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	glog.Infof("Setup")
 
 	s := InitializeState(setup)
-	g := graph.BuildWithWeight(&s.Map, func (p uint64) float64 {
-		if (p == s.Punter) {
+	g := graph.BuildWithWeight(&s.Map, func(p uint64) float64 {
+		if p == s.Punter {
 			return 0.0
 		}
 		return math.Inf(0)
@@ -169,37 +169,37 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 			for j := range s.UnconnectedOrigins {
 				if s.UnconnectedOrigins[i].Source == s.UnconnectedOrigins[j].Source {
 					// Same mine
-					continue;
+					continue
 				}
 
 				end := s.UnconnectedOrigins[j].Target
 				shortTree := graph.ShortestFrom(g, start)
 				weight := shortTree.WeightTo(g.Node(int64(end)))
-				if (weight == 0) {
+				if weight == 0 {
 					// We're already connected
 					continue
 				}
-				if (weight >= float64(int64(len(s.Map.Rivers)) - int64(s.Turn))) {
+				if weight >= float64(int64(len(s.Map.Rivers))-int64(s.Turn)) {
 					// Not possible to reach
 					continue
 				}
 
 				path, weight := shortTree.To(g.Node(int64(end)))
 				for k := range path {
-					if (k == 0) {
+					if k == 0 {
 						continue
 					}
 
 					edge := g.EdgeBetween(path[k-1], path[k]).(*graph.MetadataEdge)
 
-					if (edge.IsOwned && edge.Punter != s.Punter) {
+					if edge.IsOwned && edge.Punter != s.Punter {
 						glog.Errorf("Path between %d and %d runs through an opponent's river (%+v)", start, end, edge)
-						break;
+						break
 					}
 
-					if (edge.IsOwned) {
+					if edge.IsOwned {
 						// We must own it.
-						continue;
+						continue
 					}
 
 					return &protocol.GameplayOutput{
@@ -228,7 +228,7 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 		end := len(toExtend) - 1
 		var source *protocol.Site
 		var target *protocol.Site
-ExtendPath:
+	ExtendPath:
 		for i := range toExtend {
 			// Walk back down path until there's a path available.
 			glog.Infof("Evaluating paths %+v", toExtend)
@@ -240,21 +240,21 @@ ExtendPath:
 			for j := range neighbors {
 				candidate := neighbors[j]
 				edge := g.EdgeBetween(g.Node(int64(source.ID)), candidate).(*graph.MetadataEdge)
-				if (!edge.IsOwned) {
+				if !edge.IsOwned {
 					target = &protocol.Site{ID: protocol.SiteID(candidate.ID())}
 					break ExtendPath
 				}
 			}
 			glog.Infof("No available rivers for site %d", source.ID)
 		}
-		if (source != nil && target != nil) {
+		if source != nil && target != nil {
 			s.ActivePaths[pathIndex] = append(toExtend[:end+1], *target)
 		} else {
 			s.ActivePaths = append(s.ActivePaths[:pathIndex], s.ActivePaths[pathIndex+1:]...)
 			glog.Infof("No paths available from active path at index %d of %d, removing path.", pathIndex, len(s.ActivePaths))
 		}
 
-		if (source != nil && target != nil) {
+		if source != nil && target != nil {
 			glog.Infof("Path selected, from %d to %d", source.ID, target.ID)
 			return &protocol.GameplayOutput{
 				Move: protocol.Move{

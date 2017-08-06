@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	
+
 	. "github.com/jemoster/icfp2017/src/protocol/io"
 )
 

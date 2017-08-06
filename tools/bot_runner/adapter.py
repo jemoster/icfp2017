@@ -2,7 +2,6 @@ import os
 import subprocess
 import json
 import socket
-from time import sleep
 
 import utils
 
@@ -47,7 +46,6 @@ class OfflineAdapter:
             self.log_file.write(">> {}\n".format(json.dumps(msg)))
         msg = format_as_message(msg)
         self._socket.send(msg)
-        sleep(1.0)
 
     def receive(self, blocking=True):
         while ':' not in self.buffer:
@@ -116,6 +114,7 @@ class OfflineAdapter:
                 self.send(move)
 
         finally:
+            bot.proc.kill()
             self.disconnect()
             if self.log_file:
                 self.log_file.close()

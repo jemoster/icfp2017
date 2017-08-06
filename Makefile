@@ -35,11 +35,17 @@ blob-run: build
 random-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/ai_random.py 9018
 
+trollbot-run: build
+	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/trollbot.py 9231
+
 robbrown-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/ai_olrobbrown.py 9231
+
+troll-run: build
+	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/trollbot.py 9238
 
 multiplay: build
 	docker run $(VOLS) --rm boxes $(PLAYER) 3 9234
 
-idle-run:
+idle-run: build
 	docker run $(VOLS) --name $(IDLENAME) -d boxes $(IDLERUN)

@@ -3,6 +3,7 @@ package graph
 import (
 	"math"
 
+	"github.com/golang/glog"
 	"github.com/jemoster/icfp2017/src/protocol"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/path"
@@ -84,12 +85,33 @@ func SerializeRivers(g *simple.UndirectedGraph) []protocol.River {
 func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move) {
 	for i := range m {
 		move := m[i]
-		if move.Claim != nil {
-			claimedEdge := g.EdgeBetween(
-				g.Node(int64(move.Claim.Source)),
-				g.Node(int64(move.Claim.Target))).(*MetadataEdge)
-			claimedEdge.IsOwned = true
-			claimedEdge.Punter = move.Claim.Punter
+		var route []protocol.SiteID
+		var punter uint64
+		switch {
+		case move.Claim != nil:
+			route = []protocol.SiteID{move.Claim.Source, move.Claim.Target}
+			punter = move.Claim.Punter
+		case move.Splurge != nil:
+			route = move.Splurge.Route
+			punter = move.Splurge.Punter
+		}
+
+		if len(route) < 2 {
+			continue
+		}
+
+		for i := 0; i < len(route)-1; i++ {
+			source := route[i]
+			target := route[i+1]
+
+			e := g.EdgeBetween(g.Node(int64(source)), g.Node(int64(target)))
+			if e == nil {
+				glog.Warningf("Invalid river {%d, %d} in move %v", source, target, move)
+				continue
+			}
+			edge := e.(*MetadataEdge)
+			edge.IsOwned = true
+			edge.Punter = punter
 		}
 	}
 }
