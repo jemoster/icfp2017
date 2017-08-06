@@ -1,11 +1,11 @@
 package io
 
 import (
-	"io"
-	"fmt"
 	"bufio"
-	"strconv"
 	"encoding/json"
+	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/golang/glog"
 )
