@@ -31,7 +31,7 @@ type state struct {
 type LongWalk struct{}
 
 func (LongWalk) Name() string {
-	return "prattmic-longwalk"
+	return "longwalk"
 }
 
 // furthestNode returns the mine and site that are furthest apart, and how far
@@ -118,8 +118,6 @@ func pickMoves(g *simple.UndirectedGraph, s *state, n int) []protocol.Move {
 	moves := make([]protocol.Move, 0, n)
 
 	for len(moves) < n {
-		// FIXME(prattmic): Needs to use s.Distance, not g for
-		// non-initial calls.
 		mine, target, dist, path := furthestNode(g, s, taken)
 		glog.Infof("Furthest site: %d -> %d: %d, path: %+v", mine, target, dist, path)
 		if dist == 0 || len(path) == 0 {
@@ -222,9 +220,6 @@ func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 		if move.Claim != nil {
 			edge := g.EdgeBetween(g.Node(int64(move.Claim.Source)), g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
 			if edge.IsOwned {
-				// TODO(prattmic): pickMoves only picks moves
-				// from mines. It won't pick from nodes I
-				// already own.
 				glog.Warningf("Move %v: river already taken by %d! Recomputing moves.", move, edge.Punter)
 				s.Moves = pickMoves(g, s, len(s.Moves))
 				continue
@@ -232,6 +227,28 @@ func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 		}
 
 		return move
+	}
+}
+
+func checkMoves(g *simple.UndirectedGraph, s *state, m []protocol.Move)  {
+	for _, theirMove := range m {
+		if theirMove.Claim == nil {
+			continue
+		}
+
+		their := makeClaim(theirMove.Claim.Source, theirMove.Claim.Target)
+
+		for _, ourMove := range s.Moves {
+			if ourMove.Claim == nil {
+				continue
+			}
+
+			our := makeClaim(ourMove.Claim.Source, ourMove.Claim.Target)
+			if our == their {
+				glog.Warningf("Future move %v taken by %d! Recomputing moves.", ourMove, theirMove.Claim.Punter)
+				s.Moves = pickMoves(g, s, len(s.Moves))
+			}
+		}
 	}
 }
 
@@ -253,9 +270,10 @@ func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 		}
 		return math.Inf(0)
 	})
-	// TODO(prattmic): Recompute immediately if a future move is taken.
 	graph.UpdateGraph(g, m)
 	s.Map.Rivers = graph.SerializeRivers(g)
+
+	checkMoves(g, &s, m)
 
 	move := nextMove(g, &s)
 
