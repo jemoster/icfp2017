@@ -9,7 +9,9 @@ class RandoBot(PyBot):
 
         possible_claims = []
         for river in setup['map']['rivers']:
-            possible_claims.append((river['source'], river['target']))
+            possible_claims.append(
+                sorted([river['source'], river['target']])
+            )
 
         punter_id = setup['punter']
 
@@ -36,9 +38,11 @@ class RandoBot(PyBot):
                 continue
             move = move['claim']
             try:
-                possible_claims.remove([move['source'], move['target']])
+                possible_claims.remove(
+                    sorted([move['source'], move['target']])
+                )
             except ValueError:
-                log('possible claims'.format(possible_claims))
+                log('possible claims {}'.format(possible_claims))
                 log('failed to remove ({},{})'.format(move['source'], move['target']))
 
         claim = random.choice(possible_claims)
