@@ -25,6 +25,7 @@ type state struct {
 	Punters             uint64
 	Map                 protocol.Map
 	ActivePaths         [][]protocol.Site
+	UnconnectedOrigins  []protocol.River
 	AvailableMineRivers []protocol.River
 
 	Turn uint64
@@ -59,24 +60,48 @@ func (Brownian) Name() string {
 	return "Brownian"
 }
 
+func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move, s *state) {
+	for i := range m {
+		move := m[i]
+		if move.Claim != nil {
+			claimedEdge := g.EdgeBetween(
+				g.Node(int64(move.Claim.Source)),
+				g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
+			claimedEdge.IsOwned = true
+			claimedEdge.Punter = move.Claim.Punter
+			if (move.Claim.Punter == s.Punter) {
+				claimedEdge.W = 0
+			} else {
+				claimedEdge.W = 1000
+			}
+		}
+	}
+}
+
 func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	glog.Infof("Setup")
 
 	s := InitializeState(setup)
-	g := graph.Build(&s.Map)
+	g := graph.BuildWithWeight(&s.Map, func (p uint64) float64 {
+		if (p == s.Punter) {
+			return 0.0
+		}
+		return 1000.0
+	})
 
+	// TODO(akesling): Prioritize claiming rivers for mines with fewer owned rivers.
 	// Add all mine-neighboring rivers to AvailableMineRivers
 	for i := range s.Map.Mines {
 		mine := s.Map.Mines[i]
 		neighbors := g.From(g.Node(int64(s.Map.Mines[i])))
 		for j := range neighbors {
 			n := neighbors[j]
-			s.AvailableMineRivers = append(
-				s.AvailableMineRivers,
-				protocol.River{
-					Source: mine,
-					Target: protocol.SiteID(n.ID()),
-				})
+			newRiver := protocol.River{
+				Source: mine,
+				Target: protocol.SiteID(n.ID()),
+			}
+			s.AvailableMineRivers = append(s.AvailableMineRivers, newRiver)
+			s.UnconnectedOrigins = append(s.UnconnectedOrigins, newRiver)
 		}
 	}
 	ShuffleRivers(s.AvailableMineRivers)
@@ -97,11 +122,12 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 	}
 
 	g := graph.Build(&s.Map)
-	graph.UpdateGraph(g, m)
+	UpdateGraph(g, m, s)
 	s.Update(g, m)
 	glog.Infof("Turn: %d", s.Turn)
 
 	if len(s.AvailableMineRivers) > 0 {
+		glog.Info("Surrounding mines")
 		// Grab all rivers around mines.
 		i := 0
 		for i < len(s.AvailableMineRivers) {
@@ -128,6 +154,68 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 
 		// No rivers around mines are still available.
 		s.AvailableMineRivers = make([]protocol.River, 0)
+	}
+
+	// Connect our rivers if possible.
+	// TODO(akesling): Make sure we connect all paths through edges that aren't
+	// _through_ a mine (i.e. foo -> mine1 -> bar -> mine2 won't count foo as
+	// attached to the mine2).
+	if len(s.AvailableMineRivers) == 0 && len(s.UnconnectedOrigins) > 1 {
+		glog.Info("Connecting mines")
+		var processed int
+		for i := range s.UnconnectedOrigins {
+			processed = i
+			start := s.UnconnectedOrigins[i].Target
+			for j := range s.UnconnectedOrigins {
+				if s.UnconnectedOrigins[i].Source == s.UnconnectedOrigins[j].Source {
+					// Same mine
+					continue;
+				}
+
+				end := s.UnconnectedOrigins[j].Target
+				shortTree := graph.ShortestFrom(g, start)
+				weight := shortTree.WeightTo(g.Node(int64(end)))
+				if (weight == 0) {
+					// We're already connected
+					continue
+				}
+				if (weight >= float64(int64(len(s.Map.Rivers)) - int64(s.Turn))) {
+					// Not possible to reach
+					continue
+				}
+
+				path, weight := shortTree.To(g.Node(int64(end)))
+				for k := range path {
+					if (k == 0) {
+						continue
+					}
+
+					edge := g.EdgeBetween(path[k-1], path[k]).(*graph.MetadataEdge)
+
+					if (edge.IsOwned && edge.Punter != s.Punter) {
+						glog.Errorf("Path between %d and %d runs through an opponent's river (%+v)", start, end, edge)
+						break;
+					}
+
+					if (edge.IsOwned) {
+						// We must own it.
+						continue;
+					}
+
+					return &protocol.GameplayOutput{
+						Move: protocol.Move{
+							Claim: &protocol.Claim{
+								Punter: s.Punter,
+								Source: protocol.SiteID(edge.F.ID()),
+								Target: protocol.SiteID(edge.T.ID()),
+							},
+						},
+						State: s,
+					}, nil
+				}
+			}
+		}
+		s.UnconnectedOrigins = s.UnconnectedOrigins[processed+1:]
 	}
 
 	if len(s.AvailableMineRivers) == 0 && len(s.ActivePaths) > 0 {
