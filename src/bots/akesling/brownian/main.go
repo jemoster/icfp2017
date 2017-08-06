@@ -8,8 +8,8 @@ import (
 	"math/rand"
 
 	"github.com/golang/glog"
-	"github.com/jemoster/icfp2017/src/protocol"
 	"github.com/jemoster/icfp2017/src/graph"
+	"github.com/jemoster/icfp2017/src/protocol"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
@@ -21,10 +21,10 @@ func ShuffleRivers(r []protocol.River) {
 }
 
 type state struct {
-	Punter  uint64
-	Punters uint64
-	Map     protocol.Map
-	ActivePaths [][]protocol.Site
+	Punter              uint64
+	Punters             uint64
+	Map                 protocol.Map
+	OwnedPaths          [][]protocol.Site
 	AvailableMineRivers []protocol.River
 
 	Turn uint64

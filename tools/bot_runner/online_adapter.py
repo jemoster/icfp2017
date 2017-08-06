@@ -13,9 +13,10 @@ def main():
     parser.add_argument('--server', action="store", default="punter.inf.ed.ac.uk",
                         help='The game server to connect to defaults to "punter.inf.ed.ac.uk"')
     parser.add_argument('--record', action="store", default=None, help='filename to save playlog to')
+    parser.add_argument('--header', action="store", type=str, default=None)
     results = parser.parse_args()
 
-    adapter = OfflineAdapter(results.server, results.port, results.exe, results.record)
+    adapter = OfflineAdapter(results.server, results.port, results.exe, results.record, results.header)
     scores = adapter.run()
 
     for player in scores:

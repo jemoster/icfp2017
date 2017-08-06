@@ -15,7 +15,7 @@ type MetadataEdge struct {
 	W float64
 
 	IsOwned bool
-	Punter uint64
+	Punter  uint64
 }
 
 func (m MetadataEdge) From() graph.Node {
@@ -56,7 +56,7 @@ func Build(m *protocol.Map) *simple.UndirectedGraph {
 }
 
 func SerializeRivers(g *simple.UndirectedGraph) []protocol.River {
-	edges := g.Edges();
+	edges := g.Edges()
 	rivers := make([]protocol.River, len(edges))
 	for i := range edges {
 		curEdge := edges[i].(*MetadataEdge)
