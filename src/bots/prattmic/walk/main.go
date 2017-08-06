@@ -294,13 +294,14 @@ func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 
 	// Add the most recent moves to the graph, and update state's copy of
 	// the owned rivers.
-	g := graph.BuildWithWeight(&s.Map, func(p uint64) float64 {
+	weight := func(p uint64) float64 {
 		if p == s.Punter {
 			return 0.0
 		}
 		return math.Inf(0)
-	})
-	graph.UpdateGraph(g, m)
+	}
+	g := graph.BuildWithWeight(&s.Map, weight)
+	graph.UpdateGraph(g, m, weight)
 	s.Map.Rivers = graph.SerializeRivers(g)
 
 	checkMoves(g, &s, m)

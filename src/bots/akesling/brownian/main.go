@@ -104,13 +104,14 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 		return nil, fmt.Errorf("error unmarshaling state %s: %v", string(jsonState), err)
 	}
 
-	g := graph.BuildWithWeight(&s.Map, func(p uint64) float64 {
+	weight := func(p uint64) float64 {
 		if p == s.Punter {
 			return 0.0
 		}
 		return math.Inf(0)
-	})
-	graph.UpdateGraph(g, m)
+	}
+	g := graph.BuildWithWeight(&s.Map, weight)
+	graph.UpdateGraph(g, m, weight)
 	s.Update(g, m)
 	glog.Infof("Turn: %d", s.Turn)
 

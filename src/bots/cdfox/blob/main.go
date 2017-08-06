@@ -103,8 +103,11 @@ func (Blob) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Gamepl
 		return nil, fmt.Errorf("error unmarshaling state %s: %v", string(jsonState), err)
 	}
 
-	g := graph.Build(&s.Map)
-	graph.UpdateGraph(g, m)
+	weight := func(p uint64) float64 {
+		return 1.0
+	}
+	g := graph.BuildWithWeight(&s.Map, weight)
+	graph.UpdateGraph(g, m, weight)
 	s.Update(g, m)
 
 	// Pick an unclaimed river, or pass if all are claimed.

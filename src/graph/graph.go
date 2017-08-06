@@ -35,10 +35,12 @@ func (m MetadataEdge) Weight() float64 {
 	return m.W
 }
 
+type WeightFunc func(owner uint64) float64
+
 // BuildWithWeight returns a graph.Graph that represents m.
 //
 // ownedWeight returns the weight of an edge owned by p.
-func BuildWithWeight(m *protocol.Map, ownedWeight func(p uint64) float64) *simple.UndirectedGraph {
+func BuildWithWeight(m *protocol.Map, ownedWeight WeightFunc) *simple.UndirectedGraph {
 	g := simple.NewUndirectedGraph(0.0, math.Inf(0))
 
 	for _, si := range m.Sites {
@@ -94,7 +96,7 @@ func SerializeRivers(g *simple.UndirectedGraph) []protocol.River {
 	return rivers
 }
 
-func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move) {
+func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move, ownedWeight WeightFunc) {
 	for i := range m {
 		move := m[i]
 		var claim bool // true for claim, false for option.
@@ -131,6 +133,7 @@ func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move) {
 			if claim {
 				edge.IsOwned = true
 				edge.OwnerPunter = punter
+				edge.W = ownedWeight(edge.OwnerPunter)
 			} else {
 				edge.IsOptioned = true
 				edge.OptionPunter = punter
