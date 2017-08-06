@@ -107,7 +107,13 @@ function initCy( expJson, after ){
 
   const cy = window.cy = cytoscape({
     container: document.getElementById('cy'),
-    layout: { name: 'preset' },
+    layout: {
+      // We don't have the luxury of server-provided layout coordinates.
+      // Instead, use a built-in layout engine.
+      // http://js.cytoscape.org/#layouts
+      name: 'cose',
+      nodeOverlap: 5
+    },
     style: graphStyle,
     elements: elements,
     motionBlur: true,
@@ -167,13 +173,9 @@ function importJSON(ourJSON) {
 
     entry["data"] = {
       "id": curNode.id.toString(),
-      "x": curNode.x * scale,
-      "y" : curNode.y * scale,
       "selected": false,
     };
 
-    const position = { "x": curNode.x * scale, "y": curNode.y * scale};
-    entry["position"] = position;
     elements.push(entry);
   }
 
