@@ -19,6 +19,9 @@ type state struct {
 	Punters uint64
 	Map     protocol.Map
 
+	// Shortest distances for all mines.
+	Distances graph.Distances
+
 	Turn uint64
 
 	// Moves are the next moves to take. The next move is the first in the list.
@@ -42,7 +45,16 @@ func furthestNode(g *simple.UndirectedGraph, s *state, except map[protocol.SiteI
 	)
 
 	for _, m := range s.Map.Mines {
+		// TODO(prattmic): furtherNode is called multiple times, but
+		// this shoul be done only once.
 		shortest := graph.ShortestFrom(g, m)
+
+		// TODO(prattmic): clean this up, do initialization elsewhere.
+		var initDistances bool
+		if _, ok := s.Distances[m]; !ok {
+			s.Distances[m] = make(map[protocol.SiteID]uint64, len(s.Map.Sites))
+			initDistances = true
+		}
 
 		for _, site := range s.Map.Sites {
 			if _, ok := except[site.ID]; ok {
@@ -50,17 +62,35 @@ func furthestNode(g *simple.UndirectedGraph, s *state, except map[protocol.SiteI
 			}
 
 			n := g.Node(int64(site.ID))
-			dist := shortest.WeightTo(n)
+
+			var dist float64
+			if !initDistances {
+				// Always use s.Distance for initial distance
+				// if available.
+				dist = float64(s.Distances[m][site.ID])
+			} else {
+				dist = shortest.WeightTo(n)
+			}
+
+			if initDistances {
+				s.Distances[m][site.ID] = uint64(dist)
+			}
+
 			if math.IsInf(dist, 0) {
 				// Unreachable.
 				continue
 			}
 
 			if uint64(dist) > furthest {
+				npath, _ := shortest.To(n)
+				if len(npath) == 0 {
+					// Not reachable anymore.
+					continue
+				}
+				path = npath
 				mine = m
 				target = site.ID
 				furthest = uint64(dist)
-				path, _ = shortest.To(n)
 			}
 		}
 	}
@@ -88,16 +118,35 @@ func pickMoves(g *simple.UndirectedGraph, s *state, n int) []protocol.Move {
 	moves := make([]protocol.Move, 0, n)
 
 	for len(moves) < n {
+		// FIXME(prattmic): Needs to use s.Distance, not g for
+		// non-initial calls.
 		mine, target, dist, path := furthestNode(g, s, taken)
 		glog.Infof("Furthest site: %d -> %d: %d, path: %+v", mine, target, dist, path)
-		if dist == 0 {
+		if dist == 0 || len(path) == 0 {
 			break
 		}
 		taken[target] = struct{}{}
 
-		for i := uint64(0); i < dist; i++ {
+		for i := 0; i < len(path)-1; i++ {
 			source := protocol.SiteID(path[i].ID())
 			target := protocol.SiteID(path[i+1].ID())
+
+			edge := g.EdgeBetween(path[i], path[i+1]).(*graph.MetadataEdge)
+			if edge.IsOwned {
+				if edge.Punter == s.Punter {
+					// We own this one, great! We don't
+					// need this move again. Check the next
+					// one.
+					glog.Infof("edge {%v, %v} already taken by us!", source, target)
+					continue
+				}
+				// Someone else owns this. Skip the rest of the moves.
+				//
+				// TODO(prattmic): We should only get here if
+				// there are no other paths available.
+				glog.Infof("edge {%v, %v} already taken by %d", source, target, edge.Punter)
+				break
+			}
 
 			c := makeClaim(source, target)
 			if _, ok := claims[c]; ok {
@@ -128,10 +177,17 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 		Punters: setup.Punters,
 		Map:     setup.Map,
 
+		Distances: make(graph.Distances),
+
 		Turn: 0,
 	}
 
-	g := graph.Build(&s.Map)
+	g := graph.BuildWithWeight(&s.Map, func(p uint64) float64 {
+		if p == s.Punter {
+			return 0.0
+		}
+		return math.Inf(0)
+	})
 
 	// There are as many moves as rivers, but divided among all punters.
 	n := (len(s.Map.Rivers) + int(s.Punters)) / int(s.Punters)
@@ -166,7 +222,11 @@ func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 		if move.Claim != nil {
 			edge := g.EdgeBetween(g.Node(int64(move.Claim.Source)), g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
 			if edge.IsOwned {
-				glog.Warningf("Move %v: river already taken by %d! Skipping.", move, edge.Punter)
+				// TODO(prattmic): pickMoves only picks moves
+				// from mines. It won't pick from nodes I
+				// already own.
+				glog.Warningf("Move %v: river already taken by %d! Recomputing moves.", move, edge.Punter)
+				s.Moves = pickMoves(g, s, len(s.Moves))
 				continue
 			}
 		}
@@ -187,7 +247,13 @@ func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 
 	// Add the most recent moves to the graph, and update state's copy of
 	// the owned rivers.
-	g := graph.Build(&s.Map)
+	g := graph.BuildWithWeight(&s.Map, func(p uint64) float64 {
+		if p == s.Punter {
+			return 0.0
+		}
+		return math.Inf(0)
+	})
+	// TODO(prattmic): Recompute immediately if a future move is taken.
 	graph.UpdateGraph(g, m)
 	s.Map.Rivers = graph.SerializeRivers(g)
 
