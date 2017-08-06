@@ -166,6 +166,10 @@ data/*
 /server
 /simpleton
 /walk
+blob
+brownian
+walk
 
+tools/replay/server_env/
 # Editor swap files
 *.swp

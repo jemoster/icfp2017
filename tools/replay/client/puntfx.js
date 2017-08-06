@@ -13,32 +13,34 @@ const relayPort = 5000;
 /* Graph rendering */
 
 const colours =
-  ["#1f77b4",
-   "#aec7e8",
-   "#ff7f0e",
-   "#ffbb78",
+  [
+    "#1f77b4",
+    "#ff7f0e",
+    "#e377c2",
+    "#bcbd22",
+    "#d62728",
+    "#17becf",
+    "#8c564b",
    "#2ca02c",
+    "#9467bd",
    "#98df8a",
-   "#d62728",
    "#ff9896",
-   "#9467bd",
    "#c5b0d5",
-   "#8c564b",
+    "#aec7e8",
    "#c49c94",
-   "#e377c2",
+    "#ffbb78",
    "#f7b6d2",
    "#7f7f7f",
    "#c7c7c7",
-   "#bcbd22",
    "#dbdb8d",
-   "#17becf",
-   "#9edae5"];
+   "#9edae5"
+  ];
 
 function getPunterColour(punter) {
   return colours[punter % colours.length];
 }
 
-function renderGraph(graph) {
+function renderGraph(punterID, graph) {
     initCy(graph,
            function() {
                initialised = true;
@@ -150,6 +152,8 @@ function connect(gamePort, punterName) {
     let graph = undefined;
     let ws_uri = "ws://" + hostname + ":" + relayPort;
     logInfo("connecting to relay [" + ws_uri + "]...");
+    
+    let punterID = null;
 
     socket = new WebSocket(ws_uri);
 
@@ -195,7 +199,7 @@ function connect(gamePort, punterName) {
                           "edges": msg.map.rivers,
                           "mines": msg.map.mines };
                 logInfo("rendering game graph...");
-                renderGraph(msg.map);
+                renderGraph(punterID, msg.map);
             } else if (msg.move !== undefined) {
                 handleIncomingMoves(msg.move.moves);
             } else if (msg.stop !== undefined) {
@@ -327,7 +331,17 @@ function updateEdgeOwner(punter, source, target) {
   if (es.length > 0) {
     const e = es[0];
     e.data()["owner"] = punter;
-    e.style("line-color", getPunterColour(punter));
+    e.animate({
+      style: {
+        "line-color": getPunterColour(punter),
+        width: 30
+      }
+    }, {
+      duration: 220,
+      easing: 'ease-in-quad'
+    });
+    //e.style("line-color", getPunterColour(punter));
+
   } else {
     logError("Trying to update nonexistent edge! (" + source + " -- " + target + ")");
   }
