@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 
@@ -72,7 +73,7 @@ func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move, s *state) {
 			if move.Claim.Punter == s.Punter {
 				claimedEdge.W = 0
 			} else {
-				claimedEdge.W = 1000
+				claimedEdge.W = math.Inf(0)
 			}
 		}
 	}
@@ -86,7 +87,7 @@ func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 		if p == s.Punter {
 			return 0.0
 		}
-		return 1000.0
+		return math.Inf(0)
 	})
 
 	// TODO(akesling): Prioritize claiming rivers for mines with fewer owned rivers.
