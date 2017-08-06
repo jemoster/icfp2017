@@ -2,4 +2,3 @@ maps/*
 .git/*
 data/*
 Makefile
-Dockerfile
