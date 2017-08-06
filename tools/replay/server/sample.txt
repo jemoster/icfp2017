@@ -1,0 +1,60 @@
+{"server": "punter.inf.ed.ac.uk", "extra": "eager punter, eager punter", "metadata": 0, "port": 9028}
+>> {"me": "prattmic-longwalk"}
+<< {"you": "prattmic-longwalk"}
+<< {"punter": 2, "map": {"sites": [{"id": 18, "y": 0.0, "x": 0.75}, {"id": 25, "y": -0.10825317547305482, "x": 0.9375}, {"id": 4, "y": -0.4330127018922193, "x": 0.75}, {"id": 30, "y": -0.4330127018922193, "x": 0.5}, {"id": 14, "y": -0.10825317547305482, "x": 0.3125}, {"id": 15, "y": -0.21650635094610965, "x": 0.25}, {"id": 31, "y": -0.649519052838329, "x": 0.625}, {"id": 12, "y": 0.0, "x": 0.375}, {"id": 8, "y": -0.21650635094610965, "x": 0.125}, {"id": 1, "y": 0.0, "x": 1.0}, {"id": 23, "y": -0.10825317547305482, "x": 0.5625}, {"id": 3, "y": 0.0, "x": 0.5}, {"id": 16, "y": -0.3247595264191645, "x": 0.3125}, {"id": 24, "y": 0.0, "x": 0.875}, {"id": 21, "y": 0.0, "x": 0.625}, {"id": 36, "y": -0.4330127018922193, "x": 0.625}, {"id": 26, "y": -0.10825317547305482, "x": 0.8125}, {"id": 11, "y": -0.10825317547305482, "x": 0.0625}, {"id": 9, "y": 0.0, "x": 0.125}, {"id": 13, "y": -0.10825317547305482, "x": 0.4375}, {"id": 19, "y": -0.21650635094610965, "x": 0.875}, {"id": 32, "y": -0.649519052838329, "x": 0.375}, {"id": 17, "y": -0.3247595264191645, "x": 0.1875}, {"id": 40, "y": -0.7577722283113838, "x": 0.5625}, {"id": 6, "y": 0.0, "x": 0.25}, {"id": 27, "y": -0.21650635094610965, "x": 0.75}, {"id": 38, "y": -0.5412658773652741, "x": 0.5625}, {"id": 34, "y": -0.5412658773652741, "x": 0.4375}, {"id": 22, "y": -0.10825317547305482, "x": 0.6875}, {"id": 28, "y": -0.3247595264191645, "x": 0.8125}, {"id": 5, "y": -0.4330127018922193, "x": 0.25}, {"id": 33, "y": -0.4330127018922193, "x": 0.375}, {"id": 37, "y": -0.5412658773652741, "x": 0.6875}, {"id": 41, "y": -0.7577722283113838, "x": 0.4375}, {"id": 10, "y": -0.10825317547305482, "x": 0.1875}, {"id": 0, "y": 0.0, "x": 0.0}, {"id": 39, "y": -0.649519052838329, "x": 0.5}, {"id": 7, "y": -0.21650635094610965, "x": 0.375}, {"id": 35, "y": -0.5412658773652741, "x": 0.3125}, {"id": 29, "y": -0.3247595264191645, "x": 0.6875}, {"id": 2, "y": -0.8660254037844386, "x": 0.5}, {"id": 20, "y": -0.21650635094610965, "x": 0.625}], "rivers": [{"source": 24, "target": 25}, {"source": 19, "target": 25}, {"source": 1, "target": 25}, {"source": 13, "target": 14}, {"source": 12, "target": 14}, {"source": 7, "target": 14}, {"source": 6, "target": 14}, {"source": 8, "target": 15}, {"source": 7, "target": 15}, {"source": 6, "target": 12}, {"source": 3, "target": 12}, {"source": 22, "target": 23}, {"source": 21, "target": 23}, {"source": 20, "target": 23}, {"source": 3, "target": 23}, {"source": 15, "target": 16}, {"source": 7, "target": 16}, {"source": 5, "target": 16}, {"source": 18, "target": 24}, {"source": 1, "target": 24}, {"source": 18, "target": 21}, {"source": 3, "target": 21}, {"source": 30, "target": 36}, {"source": 4, "target": 36}, {"source": 25, "target": 26}, {"source": 24, "target": 26}, {"source": 19, "target": 26}, {"source": 18, "target": 26}, {"source": 10, "target": 11}, {"source": 9, "target": 11}, {"source": 8, "target": 11}, {"source": 0, "target": 11}, {"source": 6, "target": 9}, {"source": 0, "target": 9}, {"source": 12, "target": 13}, {"source": 7, "target": 13}, {"source": 3, "target": 13}, {"source": 16, "target": 17}, {"source": 15, "target": 17}, {"source": 8, "target": 17}, {"source": 5, "target": 17}, {"source": 39, "target": 40}, {"source": 31, "target": 40}, {"source": 2, "target": 40}, {"source": 20, "target": 27}, {"source": 19, "target": 27}, {"source": 37, "target": 38}, {"source": 36, "target": 38}, {"source": 31, "target": 38}, {"source": 30, "target": 38}, {"source": 33, "target": 34}, {"source": 32, "target": 34}, {"source": 30, "target": 34}, {"source": 21, "target": 22}, {"source": 20, "target": 22}, {"source": 18, "target": 22}, {"source": 27, "target": 28}, {"source": 19, "target": 28}, {"source": 4, "target": 28}, {"source": 30, "target": 33}, {"source": 5, "target": 33}, {"source": 36, "target": 37}, {"source": 31, "target": 37}, {"source": 4, "target": 37}, {"source": 40, "target": 41}, {"source": 39, "target": 41}, {"source": 32, "target": 41}, {"source": 2, "target": 41}, {"source": 9, "target": 10}, {"source": 8, "target": 10}, {"source": 6, "target": 10}, {"source": 32, "target": 39}, {"source": 31, "target": 39}, {"source": 34, "target": 35}, {"source": 33, "target": 35}, {"source": 32, "target": 35}, {"source": 5, "target": 35}, {"source": 28, "target": 29}, {"source": 27, "target": 29}, {"source": 20, "target": 29}, {"source": 4, "target": 29}], "mines": [3, 4, 5]}, "punters": 3}
+>> {"ready": 2}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 34, "target": 35}}, {"claim": {"punter": 1, "source": 30, "target": 33}}, {"pass": {"punter": 2}}]}}
+>> {"claim": {"punter": 2, "source": 3, "target": 13}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 3, "target": 23}}, {"claim": {"punter": 1, "source": 28, "target": 29}}, {"claim": {"punter": 2, "source": 3, "target": 13}}]}}
+>> {"claim": {"punter": 2, "source": 13, "target": 7}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 33, "target": 35}}, {"claim": {"punter": 1, "source": 32, "target": 41}}, {"claim": {"punter": 2, "source": 13, "target": 7}}]}}
+>> {"claim": {"punter": 2, "source": 7, "target": 16}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 6, "target": 12}}, {"claim": {"punter": 1, "source": 12, "target": 14}}, {"claim": {"punter": 2, "source": 7, "target": 16}}]}}
+>> {"claim": {"punter": 2, "source": 16, "target": 5}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 32, "target": 34}}, {"claim": {"punter": 1, "source": 15, "target": 16}}, {"claim": {"punter": 2, "source": 16, "target": 5}}]}}
+>> {"claim": {"punter": 2, "source": 5, "target": 35}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 4, "target": 37}}, {"claim": {"punter": 1, "source": 15, "target": 17}}, {"claim": {"punter": 2, "source": 5, "target": 35}}]}}
+>> {"claim": {"punter": 2, "source": 35, "target": 32}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 5, "target": 17}}, {"claim": {"punter": 1, "source": 0, "target": 11}}, {"claim": {"punter": 2, "source": 35, "target": 32}}]}}
+>> {"claim": {"punter": 2, "source": 41, "target": 2}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 40, "target": 41}}, {"claim": {"punter": 1, "source": 31, "target": 37}}, {"claim": {"punter": 2, "source": 41, "target": 2}}]}}
+>> {"claim": {"punter": 2, "source": 4, "target": 29}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 6, "target": 14}}, {"claim": {"punter": 1, "source": 24, "target": 25}}, {"claim": {"punter": 2, "source": 4, "target": 29}}]}}
+>> {"claim": {"punter": 2, "source": 29, "target": 20}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 24, "target": 26}}, {"claim": {"punter": 1, "source": 9, "target": 10}}, {"claim": {"punter": 2, "source": 29, "target": 20}}]}}
+>> {"claim": {"punter": 2, "source": 20, "target": 23}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 22, "target": 23}}, {"claim": {"punter": 1, "source": 31, "target": 38}}, {"claim": {"punter": 2, "source": 20, "target": 23}}]}}
+>> {"claim": {"punter": 2, "source": 3, "target": 12}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 21, "target": 23}}, {"claim": {"punter": 1, "source": 9, "target": 11}}, {"claim": {"punter": 2, "source": 3, "target": 12}}]}}
+>> {"claim": {"punter": 2, "source": 6, "target": 9}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 8, "target": 11}}, {"claim": {"punter": 1, "source": 37, "target": 38}}, {"claim": {"punter": 2, "source": 6, "target": 9}}]}}
+>> {"claim": {"punter": 2, "source": 9, "target": 0}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 36, "target": 38}}, {"claim": {"punter": 1, "source": 18, "target": 24}}, {"claim": {"punter": 2, "source": 9, "target": 0}}]}}
+>> {"claim": {"punter": 2, "source": 5, "target": 33}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 30, "target": 36}}, {"claim": {"punter": 1, "source": 8, "target": 10}}, {"claim": {"punter": 2, "source": 5, "target": 33}}]}}
+>> {"claim": {"punter": 2, "source": 36, "target": 4}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 27, "target": 29}}, {"claim": {"punter": 1, "source": 20, "target": 27}}, {"claim": {"punter": 2, "source": 36, "target": 4}}]}}
+>> {"claim": {"punter": 2, "source": 4, "target": 28}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 31, "target": 40}}, {"claim": {"punter": 1, "source": 16, "target": 17}}, {"claim": {"punter": 2, "source": 4, "target": 28}}]}}
+>> {"claim": {"punter": 2, "source": 28, "target": 19}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 31, "target": 39}}, {"claim": {"punter": 1, "source": 2, "target": 40}}, {"claim": {"punter": 2, "source": 28, "target": 19}}]}}
+>> {"claim": {"punter": 2, "source": 19, "target": 25}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 1, "target": 24}}, {"claim": {"punter": 1, "source": 19, "target": 26}}, {"claim": {"punter": 2, "source": 19, "target": 25}}]}}
+>> {"claim": {"punter": 2, "source": 25, "target": 1}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 10, "target": 11}}, {"claim": {"punter": 1, "source": 20, "target": 22}}, {"claim": {"punter": 2, "source": 25, "target": 1}}]}}
+>> {"claim": {"punter": 2, "source": 32, "target": 39}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 18, "target": 22}}, {"claim": {"punter": 1, "source": 33, "target": 34}}, {"claim": {"punter": 2, "source": 32, "target": 39}}]}}
+>> {"pass": {"punter": 2}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 7, "target": 15}}, {"claim": {"punter": 1, "source": 25, "target": 26}}, {"pass": {"punter": 2}}]}}
+>> {"pass": {"punter": 2}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 39, "target": 41}}, {"claim": {"punter": 1, "source": 13, "target": 14}}, {"pass": {"punter": 2}}]}}
+>> {"pass": {"punter": 2}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 19, "target": 27}}, {"claim": {"punter": 1, "source": 18, "target": 26}}, {"pass": {"punter": 2}}]}}
+>> {"pass": {"punter": 2}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 21, "target": 22}}, {"claim": {"punter": 1, "source": 30, "target": 38}}, {"pass": {"punter": 2}}]}}
+>> {"pass": {"punter": 2}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 39, "target": 40}}, {"claim": {"punter": 1, "source": 27, "target": 28}}, {"pass": {"punter": 2}}]}}
+>> {"pass": {"punter": 2}}
+<< {"move": {"moves": [{"claim": {"punter": 0, "source": 30, "target": 34}}, {"claim": {"punter": 1, "source": 8, "target": 15}}, {"pass": {"punter": 2}}]}}
+>> {"pass": {"punter": 2}}
+<< {"stop": {"scores": [{"punter": 0, "score": 12}, {"punter": 1, "score": 0}, {"punter": 2, "score": 272}], "moves": [{"pass": {"punter": 0}}, {"pass": {"punter": 1}}, {"pass": {"punter": 2}}]}}
