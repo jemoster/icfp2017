@@ -212,7 +212,7 @@ func main() {
 				}
 
 				river.IsOwned = true
-				river.Punter = uint64(curPunter)
+				river.OwnerPunter = uint64(curPunter)
 
 				sM.Move.Moves[curPunter].Claim = rM.Move.Claim
 			}

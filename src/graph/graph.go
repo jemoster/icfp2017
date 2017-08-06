@@ -15,8 +15,12 @@ type MetadataEdge struct {
 	T graph.Node
 	W float64
 
-	IsOwned bool
-	Punter  uint64
+	IsOwned     bool
+	OwnerPunter uint64
+
+	// IsOptioned means that OptionPunter holds the option on this edge.
+	IsOptioned   bool
+	OptionPunter uint64
 }
 
 func (m MetadataEdge) From() graph.Node {
@@ -44,14 +48,18 @@ func BuildWithWeight(m *protocol.Map, ownedWeight func(p uint64) float64) *simpl
 	var river *MetadataEdge
 	for _, r := range m.Rivers {
 		river = &MetadataEdge{
-			F: g.Node(int64(r.Source)),
-			T: g.Node(int64(r.Target)),
-			W: 1.0,
+			F:          g.Node(int64(r.Source)),
+			T:          g.Node(int64(r.Target)),
+			W:          1.0,
+			IsOwned:    r.IsOwned,
+			IsOptioned: r.IsOptioned,
 		}
 		if r.IsOwned {
-			river.IsOwned = true
-			river.Punter = r.Punter
-			river.W = ownedWeight(river.Punter)
+			river.OwnerPunter = r.OwnerPunter
+			river.W = ownedWeight(river.OwnerPunter)
+		}
+		if r.IsOptioned {
+			river.OptionPunter = r.OptionPunter
 		}
 		g.SetEdge(river)
 	}
@@ -70,13 +78,17 @@ func SerializeRivers(g *simple.UndirectedGraph) []protocol.River {
 	for i := range edges {
 		curEdge := edges[i].(*MetadataEdge)
 		rivers[i] = protocol.River{
-			Source: protocol.SiteID(curEdge.From().ID()),
-			Target: protocol.SiteID(curEdge.To().ID()),
+			Source:     protocol.SiteID(curEdge.From().ID()),
+			Target:     protocol.SiteID(curEdge.To().ID()),
+			IsOwned:    curEdge.IsOwned,
+			IsOptioned: curEdge.IsOptioned,
 		}
 
 		if curEdge.IsOwned {
-			rivers[i].IsOwned = true
-			rivers[i].Punter = curEdge.Punter
+			rivers[i].OwnerPunter = curEdge.OwnerPunter
+		}
+		if curEdge.IsOptioned {
+			rivers[i].OptionPunter = curEdge.OptionPunter
 		}
 	}
 	return rivers
@@ -85,15 +97,21 @@ func SerializeRivers(g *simple.UndirectedGraph) []protocol.River {
 func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move) {
 	for i := range m {
 		move := m[i]
+		var claim bool // true for claim, false for option.
 		var route []protocol.SiteID
 		var punter uint64
 		switch {
 		case move.Claim != nil:
+			claim = true
 			route = []protocol.SiteID{move.Claim.Source, move.Claim.Target}
 			punter = move.Claim.Punter
 		case move.Splurge != nil:
+			claim = true
 			route = move.Splurge.Route
 			punter = move.Splurge.Punter
+		case move.Option != nil:
+			route = []protocol.SiteID{move.Option.Source, move.Option.Target}
+			punter = move.Option.Punter
 		}
 
 		if len(route) < 2 {
@@ -110,8 +128,13 @@ func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move) {
 				continue
 			}
 			edge := e.(*MetadataEdge)
-			edge.IsOwned = true
-			edge.Punter = punter
+			if claim {
+				edge.IsOwned = true
+				edge.OwnerPunter = punter
+			} else {
+				edge.IsOptioned = true
+				edge.OptionPunter = punter
+			}
 		}
 	}
 }

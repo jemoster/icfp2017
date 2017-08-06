@@ -61,24 +61,6 @@ func (Brownian) Name() string {
 	return "Brownian"
 }
 
-func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move, s *state) {
-	for i := range m {
-		move := m[i]
-		if move.Claim != nil {
-			claimedEdge := g.EdgeBetween(
-				g.Node(int64(move.Claim.Source)),
-				g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
-			claimedEdge.IsOwned = true
-			claimedEdge.Punter = move.Claim.Punter
-			if move.Claim.Punter == s.Punter {
-				claimedEdge.W = 0
-			} else {
-				claimedEdge.W = math.Inf(0)
-			}
-		}
-	}
-}
-
 func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	glog.Infof("Setup")
 
@@ -122,8 +104,13 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 		return nil, fmt.Errorf("error unmarshaling state %s: %v", string(jsonState), err)
 	}
 
-	g := graph.Build(&s.Map)
-	UpdateGraph(g, m, s)
+	g := graph.BuildWithWeight(&s.Map, func(p uint64) float64 {
+		if p == s.Punter {
+			return 0.0
+		}
+		return math.Inf(0)
+	})
+	graph.UpdateGraph(g, m)
 	s.Update(g, m)
 	glog.Infof("Turn: %d", s.Turn)
 
@@ -193,7 +180,7 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 
 					edge := g.EdgeBetween(path[k-1], path[k]).(*graph.MetadataEdge)
 
-					if edge.IsOwned && edge.Punter != s.Punter {
+					if edge.IsOwned && edge.OwnerPunter != s.Punter {
 						glog.Errorf("Path between %d and %d runs through an opponent's river (%+v)", start, end, edge)
 						break
 					}
