@@ -32,6 +32,9 @@ brownian-run: build
 blob-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./blob 9196
 
+punter2-run: build
+	docker run $(VOLS) --rm boxes $(RUNNER) ./punter2 9005
+
 random-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/ai_random.py 9018
 

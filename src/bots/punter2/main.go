@@ -14,8 +14,7 @@ type state struct {
 	Punter  uint64
 	Punters uint64
 	Map     protocol.Map
-
-	Turn uint64
+	Turn	uint64
 }
 
 type Punter2 struct{}
@@ -31,8 +30,7 @@ func (Punter2) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 		Punter:  setup.Punter,
 		Punters: setup.Punters,
 		Map:     setup.Map,
-
-		Turn: 0,
+		Turn: 	 0,
 	}
 
 	return &protocol.Ready{
