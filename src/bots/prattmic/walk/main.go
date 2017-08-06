@@ -191,7 +191,7 @@ func pickMoves(g *simple.UndirectedGraph, s *state) []protocol.Move {
 }
 
 func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
-	glog.Infof("Setup")
+	glog.Infof("Setup: game settings: %+v", setup.Settings)
 
 	s := &state{
 		Punter:  setup.Punter,
