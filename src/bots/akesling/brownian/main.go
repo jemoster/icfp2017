@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"math/rand"
 
 	"github.com/golang/glog"
 	"github.com/jemoster/icfp2017/src/graph"
@@ -12,11 +13,18 @@ import (
 	"gonum.org/v1/gonum/graph/simple"
 )
 
+func ShuffleRivers(r []protocol.River) {
+	for i := len(r) - 1; i > 0; i-- {
+		j := rand.Intn(i + 1)
+		r[i], r[j] = r[j], r[i]
+	}
+}
+
 type state struct {
 	Punter              uint64
 	Punters             uint64
 	Map                 protocol.Map
-	OwnedPaths          [][]protocol.Site
+	ActivePaths         [][]protocol.Site
 	AvailableMineRivers []protocol.River
 
 	Turn uint64
@@ -71,7 +79,9 @@ func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 				})
 		}
 	}
+	ShuffleRivers(s.AvailableMineRivers)
 
+	glog.Infof("Setup complete with available mine rivers %+v", s.AvailableMineRivers)
 	return &protocol.Ready{
 		Ready: s.Punter,
 		State: s,
@@ -91,9 +101,7 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 	s.Update(g, m)
 	glog.Infof("Turn: %d", s.Turn)
 
-	// OwnedPaths [][]protocol.Site
-	// AvailableMineRivers []protocol.River
-	if len(s.AvailableMineRivers) != 0 {
+	if len(s.AvailableMineRivers) > 0 {
 		// Grab all rivers around mines.
 		i := 0
 		for i < len(s.AvailableMineRivers) {
@@ -103,7 +111,7 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 
 			if !edge.IsOwned {
 				s.AvailableMineRivers = s.AvailableMineRivers[i:]
-				s.OwnedPaths = append(s.OwnedPaths, []protocol.Site{protocol.Site{ID: candidate.Source}, protocol.Site{ID: candidate.Source}})
+				s.ActivePaths = append(s.ActivePaths, []protocol.Site{protocol.Site{ID: candidate.Source}, protocol.Site{ID: candidate.Target}})
 
 				return &protocol.GameplayOutput{
 					Move: protocol.Move{
@@ -118,11 +126,61 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 			}
 		}
 
+		// No rivers around mines are still available.
 		s.AvailableMineRivers = make([]protocol.River, 0)
 	}
 
-	if len(s.AvailableMineRivers) == 0 {
-		// Randomly extend our rivers.
+	if len(s.AvailableMineRivers) == 0 && len(s.ActivePaths) > 0 {
+		glog.Infof("Following an active path")
+		// TODO(akesling): Go path by path instead of just following one.
+
+		// Randomly extend our rivers now that mines are covered.
+		pathIndex := rand.Intn(len(s.ActivePaths))
+		toExtend := s.ActivePaths[pathIndex]
+		end := len(toExtend) - 1
+		var source *protocol.Site
+		var target *protocol.Site
+ExtendPath:
+		for i := range toExtend {
+			// Walk back down path until there's a path available.
+			glog.Infof("Evaluating paths %+v", toExtend)
+			end = len(toExtend) - 1 - i
+			source = &toExtend[end]
+			glog.Infof("Evaluating paths from site %d", source.ID)
+			neighbors := g.From(g.Node(int64(toExtend[end].ID)))
+
+			for j := range neighbors {
+				candidate := neighbors[j]
+				edge := g.EdgeBetween(g.Node(int64(source.ID)), candidate).(*graph.MetadataEdge)
+				if (!edge.IsOwned) {
+					target = &protocol.Site{ID: protocol.SiteID(candidate.ID())}
+					break ExtendPath
+				}
+			}
+			glog.Infof("No available rivers for site %d", source.ID)
+		}
+		if (source != nil && target != nil) {
+			s.ActivePaths[pathIndex] = append(toExtend[:end+1], *target)
+		} else {
+			s.ActivePaths = append(s.ActivePaths[:pathIndex], s.ActivePaths[pathIndex+1:]...)
+			glog.Infof("No paths available from active path at index %d of %d, removing path.", pathIndex, len(s.ActivePaths))
+		}
+
+		if (source != nil && target != nil) {
+			glog.Infof("Path selected, from %d to %d", source.ID, target.ID)
+			return &protocol.GameplayOutput{
+				Move: protocol.Move{
+					Claim: &protocol.Claim{
+						Punter: s.Punter,
+						Source: source.ID,
+						Target: target.ID,
+					},
+				},
+				State: s,
+			}, nil
+		}
+	} else {
+		glog.Infof("No active paths available to follow.")
 	}
 
 	// No other moves were made, pass.
