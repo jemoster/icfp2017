@@ -15,6 +15,9 @@ import (
 	"gonum.org/v1/gonum/graph/simple"
 )
 
+// maxMoves is the approximate maximum number of moves to plan ahead.
+const maxMoves = 25
+
 type state struct {
 	Punter  uint64
 	Punters uint64
@@ -25,8 +28,12 @@ type state struct {
 
 	Turn uint64
 
-	// Moves are the next moves to take. The next move is the first in the list.
+	// Moves are the next moves to take. The next move is the first in the
+	// list.
 	Moves []protocol.Move
+
+	// Exhausted indicates we are permanently out of moves.
+	Exhausted bool
 }
 
 type LongWalk struct{}
@@ -116,7 +123,13 @@ func makeClaim(source, target protocol.SiteID) claim {
 	return claim{target, source}
 }
 
-func pickMoves(g *simple.UndirectedGraph, s *state, n int) []protocol.Move {
+func pickMoves(g *simple.UndirectedGraph, s *state) []protocol.Move {
+	// There are as many moves as rivers, but divided among all punters.
+	n := ((len(s.Map.Rivers) + int(s.Punters)) / int(s.Punters)) - int(s.Turn)
+	if n > maxMoves {
+		n = maxMoves
+	}
+
 	taken := make(map[protocol.SiteID]struct{})
 	claims := make(map[claim]struct{}, n)
 	moves := make([]protocol.Move, 0, n)
@@ -197,9 +210,7 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 		return math.Inf(0)
 	})
 
-	// There are as many moves as rivers, but divided among all punters.
-	n := (len(s.Map.Rivers) + int(s.Punters)) / int(s.Punters)
-	s.Moves = pickMoves(g, s, n)
+	s.Moves = pickMoves(g, s)
 
 	return &protocol.Ready{
 		Ready: s.Punter,
@@ -215,12 +226,21 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 // TODO(prattmic): unfortunately that move might not be useful anymore.
 func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 	for {
-		if len(s.Moves) <= 0 {
-			glog.Warningf("Ran out of moves!")
+		if s.Exhausted {
 			return protocol.Move{
 				Pass: &protocol.Pass{
 					s.Punter,
 				},
+			}
+		}
+
+		if len(s.Moves) <= 0 {
+			glog.Warningf("Ran out of moves!")
+			s.Moves = pickMoves(g, s)
+			if len(s.Moves) <= 0 {
+				glog.Warningf("Moves completely exhausted")
+				s.Exhausted = true
+				continue
 			}
 		}
 
@@ -231,7 +251,7 @@ func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 			edge := g.EdgeBetween(g.Node(int64(move.Claim.Source)), g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
 			if edge.IsOwned {
 				glog.Warningf("Move %v: river already taken by %d! Recomputing moves.", move, edge.Punter)
-				s.Moves = pickMoves(g, s, len(s.Moves))
+				s.Moves = pickMoves(g, s)
 				continue
 			}
 		}
@@ -256,7 +276,7 @@ func checkMoves(g *simple.UndirectedGraph, s *state, m []protocol.Move) {
 			our := makeClaim(ourMove.Claim.Source, ourMove.Claim.Target)
 			if our == their {
 				glog.Warningf("Future move %v taken by %d! Recomputing moves.", ourMove, theirMove.Claim.Punter)
-				s.Moves = pickMoves(g, s, len(s.Moves))
+				s.Moves = pickMoves(g, s)
 			}
 		}
 	}
