@@ -33,6 +33,7 @@ async def hello(websocket, path):
                 'data: {}'.format(datagram)
             )
             await asyncio.sleep(rate)
+    print('DONE')
 
 start_server = websockets.serve(hello, 'localhost', 5000)
 
