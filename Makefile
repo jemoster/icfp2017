@@ -7,6 +7,7 @@ VOLS=$(MAPS) $(PLAYLOG)
 RUNNER=./tools/bot_runner/online_adapter.py
 PLAYER=./tools/bot_runner/make_player_data.py
 IDLERUN=./tools/bot_runner/idle_runner.py
+IDLENAME=idle-tmp
 
 all: run
 
@@ -38,4 +39,4 @@ multiplay: build
 	docker run $(VOLS) --rm boxes $(PLAYER) 3 9234
 
 idle-run:
-	docker run $(VOLS) -d boxes $(IDLERUN)
+	docker run $(VOLS) --name $(IDLENAME) -d boxes $(IDLERUN)
