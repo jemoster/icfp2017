@@ -19,8 +19,12 @@ type state struct {
 	Punters uint64
 	Map     protocol.Map
 
-	Turn  uint64
+	Turn uint64
+
 	Moves []protocol.Move
+
+	// Move is the index into Moves for the next move.
+	Move int
 }
 
 type LongWalk struct{}
@@ -141,6 +145,38 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	}, nil
 }
 
+// nextMove returns the next move to make.
+//
+// If a river is already taken, nextMove skips it and returns the next valid
+// move.
+//
+// TODO(prattmic): unfortunately that move might not be useful anymore.
+func pickMove(g *simple.UndirectedGraph, s *state) protocol.Move {
+	for {
+		if s.Move >= len(s.Moves) {
+			glog.Warningf("Ran out of moves!")
+			return protocol.Move{
+				Pass: &protocol.Pass{
+					s.Punter,
+				},
+			}
+		}
+
+		move := s.Moves[s.Move]
+		if move.Claim != nil {
+			edge := g.EdgeBetween(g.Node(int64(move.Claim.Source)), g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
+			if edge.IsOwned {
+				glog.Warningf("Move %v: river already taken by %d! Skipping.", move, edge.Punter)
+				s.Move++
+				continue
+			}
+		}
+
+		s.Move++
+		return move
+	}
+}
+
 func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.GameplayOutput, error) {
 	glog.Infof("Play")
 
@@ -157,23 +193,7 @@ func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 	graph.UpdateGraph(g, m)
 	s.Map.Rivers = graph.SerializeRivers(g)
 
-	var move protocol.Move
-	if s.Turn < uint64(len(s.Moves)) {
-		move = s.Moves[s.Turn]
-	} else {
-		move = protocol.Move{
-			Pass: &protocol.Pass{
-				s.Punter,
-			},
-		}
-	}
-
-	if move.Claim != nil {
-		edge := g.EdgeBetween(g.Node(int64(move.Claim.Source)), g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
-		if edge.IsOwned {
-			glog.Warningf("River already taken by %d!", edge.Punter)
-		}
-	}
+	move := pickMove(g, &s)
 
 	glog.Infof("Playing: %v", move)
 
