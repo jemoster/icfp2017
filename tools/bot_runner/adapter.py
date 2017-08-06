@@ -8,7 +8,7 @@ import utils
 
 
 class OfflineAdapter:
-    def __init__(self, server, port, exe, log=None):
+    def __init__(self, server, port, exe, log=None, header=None):
         self.server = server
         self.port = port
         self.exe = exe
@@ -20,9 +20,19 @@ class OfflineAdapter:
 
         self.log_file = None
         if log is not None:
-            filename = log + '.1.txt'
+            filename = log + '.2.txt'
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             self.log_file = open(filename, 'w')
+
+            metadata = {
+                'metadata': 0,
+                'server': self.server,
+                'port': self.port,
+            }
+            if header:
+                metadata['extra'] = header
+
+            self.log_file.write(json.dumps(metadata)+'\n')
 
     def connect(self):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -160,6 +170,9 @@ def ranked(scores):
 
 def get_metrics(filename):
     with open(filename) as f:
+        metadata = None
+        if '2.txt' in filename:
+            metadata = json.loads(f.readline())
         name = parse(f.readline())['me']
         f.readline()
         punter_id = parse(f.readline())['punter']
@@ -174,7 +187,7 @@ def get_metrics(filename):
 
         scores = score['stop']['scores']
         rank = get_rank(punter_id, scores)
-        return rank, len(scores), name
+        return rank, len(scores), name, metadata
 
 
 def get_rank(punter_id, scores):

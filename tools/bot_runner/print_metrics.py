@@ -17,7 +17,7 @@ def main():
     for log in playlogs:
         try:
             stats = get_metrics(log)
-            print('{}/{} \t{} \t{log}'.format(log=log, *stats))
+            print('{}/{} \t{} \t{log} {}'.format(log=log, *stats))
         except:
             pass
             # print("couldn't parse:", log)
