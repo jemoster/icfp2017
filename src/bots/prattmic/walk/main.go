@@ -11,6 +11,7 @@ import (
 	"github.com/jemoster/icfp2017/src/graph"
 	"github.com/jemoster/icfp2017/src/protocol"
 	gograph "gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
@@ -36,7 +37,14 @@ func (LongWalk) Name() string {
 
 // furthestNode returns the mine and site that are furthest apart, and how far
 // they are.
-func furthestNode(g *simple.UndirectedGraph, s *state, except map[protocol.SiteID]struct{}) (protocol.SiteID, protocol.SiteID, uint64, []gograph.Node) {
+//
+// shortest is the set of shortest path structures for each mine.
+// except is the set of sites not to consider.
+func furthestNode(
+	g *simple.UndirectedGraph,
+	s *state,
+	shortest map[protocol.SiteID]*path.Shortest,
+	except map[protocol.SiteID]struct{}) (protocol.SiteID, protocol.SiteID, uint64, []gograph.Node) {
 	var (
 		mine     protocol.SiteID
 		target   protocol.SiteID
@@ -45,10 +53,6 @@ func furthestNode(g *simple.UndirectedGraph, s *state, except map[protocol.SiteI
 	)
 
 	for _, m := range s.Map.Mines {
-		// TODO(prattmic): furtherNode is called multiple times, but
-		// this shoul be done only once.
-		shortest := graph.ShortestFrom(g, m)
-
 		// TODO(prattmic): clean this up, do initialization elsewhere.
 		var initDistances bool
 		if _, ok := s.Distances[m]; !ok {
@@ -69,7 +73,7 @@ func furthestNode(g *simple.UndirectedGraph, s *state, except map[protocol.SiteI
 				// if available.
 				dist = float64(s.Distances[m][site.ID])
 			} else {
-				dist = shortest.WeightTo(n)
+				dist = shortest[m].WeightTo(n)
 			}
 
 			if initDistances {
@@ -82,7 +86,7 @@ func furthestNode(g *simple.UndirectedGraph, s *state, except map[protocol.SiteI
 			}
 
 			if uint64(dist) > furthest {
-				npath, _ := shortest.To(n)
+				npath, _ := shortest[m].To(n)
 				if len(npath) == 0 {
 					// Not reachable anymore.
 					continue
@@ -117,8 +121,14 @@ func pickMoves(g *simple.UndirectedGraph, s *state, n int) []protocol.Move {
 	claims := make(map[claim]struct{}, n)
 	moves := make([]protocol.Move, 0, n)
 
+	shortest := make(map[protocol.SiteID]*path.Shortest)
+	for _, m := range s.Map.Mines {
+		short := graph.ShortestFrom(g, m)
+		shortest[m] = &short
+	}
+
 	for len(moves) < n {
-		mine, target, dist, path := furthestNode(g, s, taken)
+		mine, target, dist, path := furthestNode(g, s, shortest, taken)
 		glog.Infof("Furthest site: %d -> %d: %d, path: %+v", mine, target, dist, path)
 		if dist == 0 || len(path) == 0 {
 			break
