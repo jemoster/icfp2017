@@ -62,6 +62,8 @@ class trollbot(PyBot):
 
         nextclaim=[-1, -1]
 
+        claim = None
+
         for move in moves:
             if 'pass' in move:
                 continue
@@ -72,11 +74,14 @@ class trollbot(PyBot):
             for pc in possible_claims:
                 if pc[0] == cl["target"]:
                     claim = pc
+                    break
 
 
-
+        next_site = None
         last_idx = -1
-        next_site, claim = self.choose_first_connected(possible_claims, prev_sites, prev_sites[last_idx])
+        if claim is None:
+            next_site, claim = self.choose_first_connected(possible_claims, prev_sites, prev_sites[last_idx])
+
         while claim is None:
             log("no options moving from {} in moves {}".format(prev_sites[last_idx], possible_claims))
             last_idx -= 1
@@ -94,7 +99,8 @@ class trollbot(PyBot):
             claim = random.choice(possible_claims)
             next_site = claim[0]
 
-        prev_sites.append(next_site)
+        if next_site is not None:
+            prev_sites.append(next_site)
 
         log("claimed {}".format(claim))
         log("gamin w/ {}".format(prev_sites))
