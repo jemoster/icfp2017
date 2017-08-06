@@ -22,9 +22,9 @@ def main():
             if results.filter_bot and stats[2] != results.filter_bot:
                 continue
             print('{}/{} \t{} \t{log} {}'.format(log=log, *stats))
-        except:
+        except Exception as e:
             pass
-            # print("couldn't parse:", log)
+            # print("couldn't parse:", log, e)
 
 
 if __name__ == '__main__':
