@@ -24,6 +24,7 @@ RUN go get \
     gonum.org/v1/gonum/graph/simple \
     gonum.org/v1/gonum/graph/path
 
+ENV PYTHONUNBUFFERED=1
 
 # Everything after this line will get run every time!
 COPY . /src/github.com/jemoster/icfp2017
