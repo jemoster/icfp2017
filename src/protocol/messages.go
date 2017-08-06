@@ -12,9 +12,9 @@ func (sid SiteID) ID() int64 {
 }
 
 type Site struct {
-	ID SiteID `json:"id"`
-	X float64 `json:"x"`
-	Y float64 `json:"y"`
+	ID SiteID  `json:"id"`
+	X  float64 `json:"x"`
+	Y  float64 `json:"y"`
 }
 
 type River struct {
