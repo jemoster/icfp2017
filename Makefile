@@ -23,9 +23,12 @@ simpleton-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./simpleton 9017
 
 walkbot-run: build
-	docker run $(VOLS) --rm boxes $(RUNNER) ./walk 9017
+	docker run $(VOLS) --rm boxes $(RUNNER) ./walk 9200
 
-brown-run: build
+brownian-run: build
+	docker run $(VOLS) --rm boxes $(RUNNER) ./brownian 9196
+
+robbrown-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/ai_olrobbrown.py 9231
 
 multiplay: build

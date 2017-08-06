@@ -15,10 +15,11 @@ if platform.system() == "Windows":
 server = "punter.inf.ed.ac.uk"
 
 known_bots = {
-    'brown': PYTHON_EXE + " -u src/pybots/ai_olrobbrown.py",
+    'robbrown': PYTHON_EXE + " -u src/pybots/ai_olrobbrown.py",
     'random': PYTHON_EXE + " -u src/pybots/ai_random.py",
     'walk': './walk',
     'simple': './simpleton',
+    'brownian': './brownian',
 }
 
 
