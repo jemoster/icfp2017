@@ -21,10 +21,8 @@ type state struct {
 
 	Turn uint64
 
+	// Moves are the next moves to take. The next move is the first in the list.
 	Moves []protocol.Move
-
-	// Move is the index into Moves for the next move.
-	Move int
 }
 
 type LongWalk struct{}
@@ -151,9 +149,9 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 // move.
 //
 // TODO(prattmic): unfortunately that move might not be useful anymore.
-func pickMove(g *simple.UndirectedGraph, s *state) protocol.Move {
+func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 	for {
-		if s.Move >= len(s.Moves) {
+		if len(s.Moves) <= 0 {
 			glog.Warningf("Ran out of moves!")
 			return protocol.Move{
 				Pass: &protocol.Pass{
@@ -162,17 +160,17 @@ func pickMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 			}
 		}
 
-		move := s.Moves[s.Move]
+		move := s.Moves[0]
+		s.Moves = s.Moves[1:]
+
 		if move.Claim != nil {
 			edge := g.EdgeBetween(g.Node(int64(move.Claim.Source)), g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
 			if edge.IsOwned {
 				glog.Warningf("Move %v: river already taken by %d! Skipping.", move, edge.Punter)
-				s.Move++
 				continue
 			}
 		}
 
-		s.Move++
 		return move
 	}
 }
@@ -193,7 +191,7 @@ func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 	graph.UpdateGraph(g, m)
 	s.Map.Rivers = graph.SerializeRivers(g)
 
-	move := pickMove(g, &s)
+	move := nextMove(g, &s)
 
 	glog.Infof("Playing: %v", move)
 
