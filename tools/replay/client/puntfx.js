@@ -338,7 +338,7 @@ function updateEdgeOwner(punter, source, target) {
     e.animate({
       style: {
         "line-color": getPunterColour(punter),
-        width: 30
+        width: 20
       }
     }, {
       duration: 220,
