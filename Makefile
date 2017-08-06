@@ -38,4 +38,4 @@ multiplay: build
 	docker run $(VOLS) --rm boxes $(PLAYER) 3 9234
 
 idle-run: build
-	docker run $(VOLS) --rm boxes $(IDLERUN)
+	docker run $(VOLS) -d --rm boxes $(IDLERUN)
