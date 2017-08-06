@@ -24,7 +24,7 @@ type state struct {
 	Punter              uint64
 	Punters             uint64
 	Map                 protocol.Map
-	OwnedPaths          [][]protocol.Site
+	ActivePaths         [][]protocol.Site
 	AvailableMineRivers []protocol.River
 
 	Turn uint64
