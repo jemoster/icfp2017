@@ -17,7 +17,7 @@ class PyBot:
         # Handshake
         handshake = {'me': self.name}
         self._write(handshake)
-        hand_in = self._read_structured()
+        self._read_structured()  # {'you': self.name}
 
         # Execute for state update
         msg_in = self._read_structured()
@@ -58,5 +58,5 @@ class PyBot:
 
 
 if __name__ == '__main__':
-    bot = PyBot('EAGLESSSSS!')
+    bot = PyBot('badbot')
     bot.run()

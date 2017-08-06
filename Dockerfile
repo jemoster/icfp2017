@@ -40,3 +40,5 @@ RUN go build github.com/jemoster/icfp2017/src/bots/prattmic/walk
 RUN go build github.com/jemoster/icfp2017/src/bots/akesling/brownian
 # build blob
 RUN go build github.com/jemoster/icfp2017/src/bots/cdfox/blob
+# build the server
+RUN go build github.com/jemoster/icfp2017/src/server

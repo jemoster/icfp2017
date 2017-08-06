@@ -61,5 +61,5 @@ class RandoBot(PyBot):
 
 
 if __name__ == '__main__':
-    bot = RandoBot('Rando-EAGLESSSSS!')
+    bot = RandoBot('badbot')
     bot.run()
