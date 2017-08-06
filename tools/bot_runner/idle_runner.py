@@ -35,6 +35,12 @@ def idle_run():
 if __name__ == '__main__':
     print('Idle runner starting')
     while True:
-        idle_run()
+        try:
+            idle_run()
+        except Exception as e:
+            print('Well that was bad')
+            print(e)
+            print('Spending some time in timeout')
+            time.sleep(10)
         print('Sleeping inbetween games')
         time.sleep(5)
