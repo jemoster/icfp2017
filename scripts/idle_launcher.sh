@@ -10,5 +10,7 @@ while true; do
         make build
         echo 'launching' $i
         make IDLENAME=idle-$i idle-run
+        echo 'sleeping'
+        sleep 10
     done
 done
