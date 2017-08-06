@@ -73,7 +73,7 @@ func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move, s *state) {
 			if move.Claim.Punter == s.Punter {
 				claimedEdge.W = 0
 			} else {
-				claimedEdge.W = 1000
+				claimedEdge.W = math.Inf(0)
 			}
 		}
 	}
