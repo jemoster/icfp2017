@@ -107,7 +107,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer srv.Close()
 
 	fmt.Printf("-\n")
@@ -122,6 +121,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer conn.Close()
 
 		punters[i].conn = conn
 		punters[i].reader = bufio.NewReader(conn)
@@ -242,14 +242,10 @@ func main() {
 	}
 
 	for i := 0; i < *numPunters; i++ {
-		punter := &punters[curPunter]
+		punter := &punters[i]
 
 		if err := Send(punter.writer, sS); err != nil {
 			log.Fatal(err)
 		}
-	}
-
-	for _, punter := range punters {
-		punter.conn.Close()
 	}
 }

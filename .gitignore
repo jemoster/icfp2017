@@ -163,6 +163,7 @@ data/*
 *.vhd
 
 /precompute
+/server
 /simpleton
 /walk
 
