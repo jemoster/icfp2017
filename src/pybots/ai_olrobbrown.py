@@ -9,7 +9,9 @@ class OlRobBrownBot(PyBot):
 
         possible_claims = []
         for river in setup['map']['rivers']:
-            possible_claims.append((river['source'], river['target']))
+            possible_claims.append(
+                sorted([river['source'], river['target']])
+            )
 
         punter_id = setup['punter']
 
@@ -56,7 +58,9 @@ class OlRobBrownBot(PyBot):
             if 'pass' in move:
                 continue
             move = move['claim']
-            possible_claims.remove([move['source'], move['target']])
+            possible_claims.remove(
+                sorted([move['source'], move['target']])
+            )
 
         last_idx = -1
         next_site, claim = self.choose_first_connected(possible_claims, prev_sites, prev_sites[last_idx])
