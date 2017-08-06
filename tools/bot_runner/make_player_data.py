@@ -19,6 +19,7 @@ known_bots = {
     'random': PYTHON_EXE + " -u src/pybots/ai_random.py",
     'walk': './walk',
     'brownian': './brownian',
+    'blob': './blob',
 }
 
 

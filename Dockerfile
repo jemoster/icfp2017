@@ -36,3 +36,5 @@ RUN go build github.com/jemoster/icfp2017/src/bots/unremarkable/simpleton
 RUN go build github.com/jemoster/icfp2017/src/bots/prattmic/walk
 # build brownian
 RUN go build github.com/jemoster/icfp2017/src/bots/akesling/brownian
+# build blob
+RUN go build github.com/jemoster/icfp2017/src/bots/cdfox/blob
