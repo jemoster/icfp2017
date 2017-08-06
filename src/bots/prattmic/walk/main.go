@@ -118,8 +118,6 @@ func pickMoves(g *simple.UndirectedGraph, s *state, n int) []protocol.Move {
 	moves := make([]protocol.Move, 0, n)
 
 	for len(moves) < n {
-		// FIXME(prattmic): Needs to use s.Distance, not g for
-		// non-initial calls.
 		mine, target, dist, path := furthestNode(g, s, taken)
 		glog.Infof("Furthest site: %d -> %d: %d, path: %+v", mine, target, dist, path)
 		if dist == 0 || len(path) == 0 {
