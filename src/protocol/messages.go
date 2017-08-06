@@ -16,8 +16,8 @@ type River struct {
 	Target SiteID `json:"target"`
 
 	// State additions not covered in the official protocol.
-	IsOwned bool `json:"isowned,omitempty"`
-	Punter uint64 `json:"owner,omitempty"`
+	IsOwned bool   `json:"isowned,omitempty"`
+	Punter  uint64 `json:"owner,omitempty"`
 }
 
 type Map struct {
