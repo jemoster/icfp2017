@@ -22,6 +22,8 @@ RUN go get \
     gonum.org/v1/gonum/lapack/lapack64 \
     gonum.org/v1/gonum/mat \
     gonum.org/v1/gonum/graph/simple \
+    gonum.org/v1/gonum/graph/internal/linear \
+    gonum.org/v1/gonum/graph/traverse \
     gonum.org/v1/gonum/graph/path
 
 ENV PYTHONUNBUFFERED=1
@@ -30,11 +32,9 @@ ENV PYTHONUNBUFFERED=1
 COPY . /src/github.com/jemoster/icfp2017
 WORKDIR /src/github.com/jemoster/icfp2017
 RUN go get -v github.com/jemoster/icfp2017/...
-# build simpleton
 RUN go build github.com/jemoster/icfp2017/src/bots/unremarkable/simpleton
-# build walkbot
 RUN go build github.com/jemoster/icfp2017/src/bots/prattmic/walk
-# build brownian
 RUN go build github.com/jemoster/icfp2017/src/bots/akesling/brownian
-# build blob
+RUN go build github.com/jemoster/icfp2017/src/bots/akesling/strategery
 RUN go build github.com/jemoster/icfp2017/src/bots/cdfox/blob
+RUN go build github.com/jemoster/icfp2017/src/bots/punter76
