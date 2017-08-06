@@ -31,7 +31,7 @@ type state struct {
 type LongWalk struct{}
 
 func (LongWalk) Name() string {
-	return "prattmic-longwalk"
+	return "longwalk"
 }
 
 // furthestNode returns the mine and site that are furthest apart, and how far
