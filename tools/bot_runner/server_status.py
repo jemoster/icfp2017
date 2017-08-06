@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import urllib.request
 import io
 import re
@@ -46,4 +45,6 @@ def read_status():
     return statuses
 
 
-
+if __name__ == '__main__':
+    openings = [k for k, v in read_status().items() if v['waiting'] > 0]
+    print(openings)

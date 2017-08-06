@@ -32,7 +32,7 @@ class OfflineAdapter:
             if header:
                 metadata['extra'] = header
 
-            self.log_file.write(json.dumps(metadata)+'\n')
+            self.log_file.write(json.dumps(metadata) + '\n')
 
     def connect(self):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -193,7 +193,7 @@ def get_metrics(filename):
 def get_rank(punter_id, scores):
     for rank, score in enumerate(utils.ranked(scores)):
         if punter_id == score['punter']:
-            return rank+1
+            return rank + 1
     return None
 
 

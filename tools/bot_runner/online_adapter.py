@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
+import time
 from adapter import OfflineAdapter
 
 
@@ -16,12 +18,16 @@ def main():
     parser.add_argument('--header', action="store", type=str, default=None)
     results = parser.parse_args()
 
+    if results.record is None:
+        results.record = os.path.join('data', 'online', str(int(time.time())))
+
     adapter = OfflineAdapter(results.server, results.port, results.exe, results.record, results.header)
     scores = adapter.run()
 
     for player in scores:
         player_name = 'punter:' if player['punter'] != adapter.punter_id else "me:    "
         print('{} {punter}, score: {score}'.format(player_name, **player))
+
 
 if __name__ == "__main__":
     main()
