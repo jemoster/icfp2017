@@ -2,7 +2,7 @@
 
 from online_adapter import OfflineAdapter
 import random
-from time import time
+import time
 import argparse
 import os
 
@@ -53,7 +53,7 @@ def main():
             port = pick_port()
             print('connecting to {}:{}'.format(server, port))
 
-            log_name = os.path.join(results.record, '{}_{}'.format(port, time()))
+            log_name = os.path.join(results.record, '{}_{}'.format(port, time.strftime("%Y%m%d-%H%M%S")))
             print('logging to', log_name)
 
             adapter = OfflineAdapter(server, port, results.exe, log_name)
