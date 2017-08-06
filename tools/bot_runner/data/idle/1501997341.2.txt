@@ -1,0 +1,1 @@
+{"metadata": 0, "server": "punter.inf.ed.ac.uk", "port": 9202, "extra": {"status": {"status": "Waiting for punters. (7/16)", "players": "Rando-EAGLESSSSS!, Rando-EAGLESSSSS!, Brownian, ol'robbrown, blob, Brownian, blob", "map": "edinburgh-sparse.json", "port": "9202", "waiting": 9}, "choice": "9202", "record": "data/idle/1501997341"}}
