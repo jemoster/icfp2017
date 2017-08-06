@@ -154,7 +154,7 @@ func pickMoves(g *simple.UndirectedGraph, s *state) []protocol.Move {
 
 			edge := g.EdgeBetween(path[i], path[i+1]).(*graph.MetadataEdge)
 			if edge.IsOwned {
-				if edge.Punter == s.Punter {
+				if edge.OwnerPunter == s.Punter {
 					// We own this one, great! We don't
 					// need this move again. Check the next
 					// one.
@@ -165,7 +165,7 @@ func pickMoves(g *simple.UndirectedGraph, s *state) []protocol.Move {
 				//
 				// TODO(prattmic): We should only get here if
 				// there are no other paths available.
-				glog.Infof("edge {%v, %v} already taken by %d", source, target, edge.Punter)
+				glog.Infof("edge {%v, %v} already taken by %d", source, target, edge.OwnerPunter)
 				break
 			}
 
@@ -250,7 +250,7 @@ func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 		if move.Claim != nil {
 			edge := g.EdgeBetween(g.Node(int64(move.Claim.Source)), g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
 			if edge.IsOwned {
-				glog.Warningf("Move %v: river already taken by %d! Recomputing moves.", move, edge.Punter)
+				glog.Warningf("Move %v: river already taken by %d! Recomputing moves.", move, edge.OwnerPunter)
 				s.Moves = pickMoves(g, s)
 				continue
 			}
@@ -294,13 +294,14 @@ func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 
 	// Add the most recent moves to the graph, and update state's copy of
 	// the owned rivers.
-	g := graph.BuildWithWeight(&s.Map, func(p uint64) float64 {
+	weight := func(p uint64) float64 {
 		if p == s.Punter {
 			return 0.0
 		}
 		return math.Inf(0)
-	})
-	graph.UpdateGraph(g, m)
+	}
+	g := graph.BuildWithWeight(&s.Map, weight)
+	graph.UpdateGraph(g, m, weight)
 	s.Map.Rivers = graph.SerializeRivers(g)
 
 	checkMoves(g, &s, m)

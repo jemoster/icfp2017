@@ -23,8 +23,12 @@ func Score(g *simple.UndirectedGraph, mines []protocol.SiteID, numPunters int) [
 			bft := traverse.BreadthFirst{
 				EdgeFilter: func(e graph.Edge) bool {
 					d := e.(*MetadataEdge)
-					b := d.IsOwned && d.Punter == uint64(i)
-					return b
+					if d.IsOwned && d.OwnerPunter == uint64(i) {
+						return true
+					} else if d.IsOptioned && d.OptionPunter == uint64(i) {
+						return true
+					}
+					return false
 				},
 				Visit: func(src, dst graph.Node) {
 					d := dist[m][protocol.SiteID(dst.ID())]

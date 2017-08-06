@@ -22,8 +22,11 @@ type River struct {
 	Target SiteID `json:"target"`
 
 	// State additions not covered in the official protocol.
-	IsOwned bool   `json:"isowned,omitempty"`
-	Punter  uint64 `json:"owner,omitempty"`
+	IsOwned     bool   `json:"isowned,omitempty"`
+	OwnerPunter uint64 `json:"owner,omitempty"`
+
+	IsOptioned   bool   `json:"isoptioned,omitempty"`
+	OptionPunter uint64 `json:"optionowner,omitempty"`
 }
 
 type Map struct {
@@ -43,6 +46,7 @@ type HandshakeServerClient struct {
 type Settings struct {
 	Futures  bool `json:futures"`
 	Splurges bool `json:splurges"`
+	Options  bool `json:options"`
 }
 
 type Setup struct {
@@ -75,10 +79,14 @@ type Splurge struct {
 	Route  []SiteID `json:"route"`
 }
 
+// Option is equivalent to a claim.
+type Option Claim
+
 type Move struct {
 	Claim   *Claim   `json:"claim,omitempty"`
 	Pass    *Pass    `json:"pass,omitempty"`
 	Splurge *Splurge `json:"splurge,omitempty"`
+	Option  *Option  `json:"option,omitempty"`
 }
 
 func (m Move) String() string {
