@@ -173,3 +173,4 @@ walk
 tools/replay/server_env/
 # Editor swap files
 *.swp
+*.orig
