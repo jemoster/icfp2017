@@ -5,6 +5,10 @@ This is a fork of http://punter.inf.ed.ac.uk/graph-viewer/.
 To use, from the parent directory (not this one!), run:
 
     $ python -m SimpleHTTPServer 8000
+    
+or for python 3
+
+    $ python3 -m http.server 8000    
 
 Then browse to http://localhost:8000/viewer/.
 
