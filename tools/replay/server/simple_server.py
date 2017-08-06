@@ -21,11 +21,18 @@ async def hello(websocket, path):
             if 'you' in msg:
                 continue
 
-            print('sending...')
+            datagram = json.dumps(msg)
+            print('sending... {}'.format(len(datagram)))
+
+            if 'map' in msg:
+                print(len(datagram))
+                rate = min(4.0, max(0.2, len(datagram) / 30000))
+                print(rate)
+
             await websocket.send(
-                'data: {}'.format(json.dumps(msg))
+                'data: {}'.format(datagram)
             )
-            await asyncio.sleep(2)
+            await asyncio.sleep(rate)
 
 start_server = websockets.serve(hello, 'localhost', 5000)
 
