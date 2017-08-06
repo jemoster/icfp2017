@@ -6,16 +6,15 @@ import (
 	"github.com/golang/glog"
 	"github.com/jemoster/icfp2017/src/graph"
 	"github.com/jemoster/icfp2017/src/protocol"
-	"gonum.org/v1/gonum/graph/simple"
 )
 
-type Strategy func(s *state, g *simple.UndirectedGraph) (*protocol.GameplayOutput, error)
+type Strategy func(s *state, g *graph.Graph) (*protocol.GameplayOutput, error)
 
-func DetermineStrategies(s *state, g *simple.UndirectedGraph) []Strategy {
+func DetermineStrategies(s *state, g *graph.Graph) []Strategy {
 	return []Strategy{CaptureMineAdjacentRivers, ConnectRivers, RandomWalkPaths}
 }
 
-func CaptureMineAdjacentRivers(s *state, g *simple.UndirectedGraph) (*protocol.GameplayOutput, error) {
+func CaptureMineAdjacentRivers(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
 	if len(s.AvailableMineRivers) == 0 {
 		return nil, nil
 	}
@@ -51,7 +50,7 @@ func CaptureMineAdjacentRivers(s *state, g *simple.UndirectedGraph) (*protocol.G
 	return nil, nil
 }
 
-func ConnectRivers(s *state, g *simple.UndirectedGraph) (*protocol.GameplayOutput, error) {
+func ConnectRivers(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
 	// Connect our rivers if possible.
 	// TODO(akesling): Make sure we connect all paths through edges that aren't
 	// _through_ a mine (i.e. foo -> mine1 -> bar -> mine2 won't count foo as
@@ -72,7 +71,7 @@ func ConnectRivers(s *state, g *simple.UndirectedGraph) (*protocol.GameplayOutpu
 			}
 
 			end := s.UnconnectedOrigins[j].Target
-			shortTree := graph.ShortestFrom(g, start)
+			shortTree := g.ShortestFrom(start)
 			weight := shortTree.WeightTo(g.Node(int64(end)))
 			if weight == 0 {
 				// We're already connected
@@ -119,7 +118,7 @@ func ConnectRivers(s *state, g *simple.UndirectedGraph) (*protocol.GameplayOutpu
 	return nil, nil
 }
 
-func RandomWalkPaths(s *state, g *simple.UndirectedGraph) (*protocol.GameplayOutput, error) {
+func RandomWalkPaths(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
 	if len(s.ActivePaths) == 0 {
 		glog.Infof("No active paths available to follow.")
 		return nil, nil
