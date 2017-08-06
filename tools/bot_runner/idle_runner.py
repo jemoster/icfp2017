@@ -2,6 +2,7 @@
 
 import os
 import random
+import signal
 import time
 from server_status import read_status
 from adapter import OfflineAdapter
@@ -33,8 +34,19 @@ def idle_run():
 
 
 if __name__ == '__main__':
+    global running
+    running = True
+
+    def handler(signum, frame):
+        global running
+        print('Signal handler called with signal', signum)
+        running = False
+
+    print('registering signal handler')
+    signal.signal(signal.SIGUSR1, handler)
+
     print('Idle runner starting')
-    while True:
+    while running:
         try:
             idle_run()
         except Exception as e:
