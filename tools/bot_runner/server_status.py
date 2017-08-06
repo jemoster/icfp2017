@@ -7,15 +7,17 @@ def waiting_for(game):
     return game['total_punters'] - len(game['punters'])
 
 
-def read_status():
+def read_status(retries=10):
     PUNTER_STATUS = 'http://punter.inf.ed.ac.uk/status.json'
 
-    try:
-        with urllib.request.urlopen(PUNTER_STATUS) as response:
-           html = response.read()
-        game_list = json.loads(html.decode())
-    except Exception as e:
-        raise ('Error accessing status page', e)
+    for retry in range(retries):
+        try:
+            with urllib.request.urlopen(PUNTER_STATUS) as response:
+               html = response.read()
+            game_list = json.loads(html.decode())
+        except Exception as e:
+            continue
+        break
 
     games = {}
     for game in game_list['games']:
