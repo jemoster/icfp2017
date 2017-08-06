@@ -7,6 +7,10 @@ import (
 
 type SiteID uint64
 
+func (sid SiteID) ID() int64 {
+	return int64(sid)
+}
+
 type Site struct {
 	ID SiteID `json:"id"`
 }
