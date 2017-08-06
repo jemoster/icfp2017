@@ -11,7 +11,6 @@ import (
 	"github.com/jemoster/icfp2017/src/graph"
 	"github.com/jemoster/icfp2017/src/protocol"
 	gonumGraph "gonum.org/v1/gonum/graph"
-	"gonum.org/v1/gonum/graph/simple"
 )
 
 type state struct {
@@ -24,8 +23,8 @@ type state struct {
 	Turn uint64
 }
 
-func (s *state) Update(g *simple.UndirectedGraph, m []protocol.Move) {
-	s.Map.Rivers = graph.SerializeRivers(g)
+func (s *state) Update(g *graph.Graph, m []protocol.Move) {
+	s.Map.Rivers = g.SerializeRivers()
 	s.Turn += uint64(len(m))
 }
 
@@ -36,6 +35,10 @@ func riverKey(r protocol.River) string {
 	} else {
 		return fmt.Sprintf("%d %d", r.Target, r.Source)
 	}
+}
+
+func weight(*graph.MetadataEdge) float64 {
+	return 1.0
 }
 
 type Blob struct{}
@@ -57,7 +60,7 @@ func (Blob) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	// Pick a random mine.
 	blobCenter := protocol.SiteID(rand.Intn(len(setup.Map.Mines)))
 
-	g := graph.Build(&setup.Map)
+	g := graph.New(&setup.Map, weight)
 
 	riverIdx := map[string]int{}
 	for i, r := range setup.Map.Rivers {
@@ -103,11 +106,8 @@ func (Blob) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Gamepl
 		return nil, fmt.Errorf("error unmarshaling state %s: %v", string(jsonState), err)
 	}
 
-	weight := func(p uint64) float64 {
-		return 1.0
-	}
-	g := graph.BuildWithWeight(&s.Map, weight)
-	graph.UpdateGraph(g, m, weight)
+	g := graph.New(&s.Map, weight)
+	g.Update(m)
 	s.Update(g, m)
 
 	// Pick an unclaimed river, or pass if all are claimed.

@@ -2,14 +2,13 @@ package graph
 
 import (
 	"gonum.org/v1/gonum/graph"
-	"gonum.org/v1/gonum/graph/simple"
 	"gonum.org/v1/gonum/graph/traverse"
 
 	"github.com/jemoster/icfp2017/src/protocol"
 )
 
-func Score(g *simple.UndirectedGraph, mines []protocol.SiteID, numPunters int) []protocol.Score {
-	dist := ShortestDistances(g, mines)
+func (g *Graph) Score(mines []protocol.SiteID, numPunters int) []protocol.Score {
+	dist := g.ShortestDistances(mines)
 
 	scores := make([]protocol.Score, numPunters)
 

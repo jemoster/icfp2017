@@ -12,7 +12,6 @@ import (
 	"github.com/jemoster/icfp2017/src/protocol"
 	gograph "gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/path"
-	"gonum.org/v1/gonum/graph/simple"
 )
 
 // maxMoves is the approximate maximum number of moves to plan ahead.
@@ -36,6 +35,20 @@ type state struct {
 	Exhausted bool
 }
 
+func (s *state) weightFunc() graph.WeightFunc {
+	return func(e *graph.MetadataEdge) float64 {
+		if !e.IsOwned {
+			return 1.0
+		}
+
+		if e.OwnerPunter == s.Punter {
+			return 0.0
+		}
+
+		return math.Inf(0)
+	}
+}
+
 type LongWalk struct{}
 
 func (LongWalk) Name() string {
@@ -48,7 +61,7 @@ func (LongWalk) Name() string {
 // shortest is the set of shortest path structures for each mine.
 // except is the set of sites not to consider.
 func furthestNode(
-	g *simple.UndirectedGraph,
+	g *graph.Graph,
 	s *state,
 	shortest map[protocol.SiteID]*path.Shortest,
 	except map[protocol.SiteID]struct{}) (protocol.SiteID, protocol.SiteID, uint64, []gograph.Node) {
@@ -123,7 +136,7 @@ func makeClaim(source, target protocol.SiteID) claim {
 	return claim{target, source}
 }
 
-func pickMoves(g *simple.UndirectedGraph, s *state) []protocol.Move {
+func pickMoves(g *graph.Graph, s *state) []protocol.Move {
 	// There are as many moves as rivers, but divided among all punters.
 	n := ((len(s.Map.Rivers) + int(s.Punters)) / int(s.Punters)) - int(s.Turn)
 	if n > maxMoves {
@@ -136,7 +149,7 @@ func pickMoves(g *simple.UndirectedGraph, s *state) []protocol.Move {
 
 	shortest := make(map[protocol.SiteID]*path.Shortest)
 	for _, m := range s.Map.Mines {
-		short := graph.ShortestFrom(g, m)
+		short := g.ShortestFrom(m)
 		shortest[m] = &short
 	}
 
@@ -203,12 +216,7 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 		Turn: 0,
 	}
 
-	g := graph.BuildWithWeight(&s.Map, func(p uint64) float64 {
-		if p == s.Punter {
-			return 0.0
-		}
-		return math.Inf(0)
-	})
+	g := graph.New(&s.Map, s.weightFunc())
 
 	s.Moves = pickMoves(g, s)
 
@@ -224,7 +232,7 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 // move.
 //
 // TODO(prattmic): unfortunately that move might not be useful anymore.
-func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
+func nextMove(g *graph.Graph, s *state) protocol.Move {
 	for {
 		if s.Exhausted {
 			return protocol.Move{
@@ -260,7 +268,7 @@ func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 	}
 }
 
-func checkMoves(g *simple.UndirectedGraph, s *state, m []protocol.Move) {
+func checkMoves(g *graph.Graph, s *state, m []protocol.Move) {
 	for _, theirMove := range m {
 		if theirMove.Claim == nil {
 			continue
@@ -294,15 +302,9 @@ func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 
 	// Add the most recent moves to the graph, and update state's copy of
 	// the owned rivers.
-	weight := func(p uint64) float64 {
-		if p == s.Punter {
-			return 0.0
-		}
-		return math.Inf(0)
-	}
-	g := graph.BuildWithWeight(&s.Map, weight)
-	graph.UpdateGraph(g, m, weight)
-	s.Map.Rivers = graph.SerializeRivers(g)
+	g := graph.New(&s.Map, s.weightFunc())
+	g.Update(m)
+	s.Map.Rivers = g.SerializeRivers()
 
 	checkMoves(g, &s, m)
 

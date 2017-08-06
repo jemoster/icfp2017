@@ -10,7 +10,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/jemoster/icfp2017/src/graph"
 	"github.com/jemoster/icfp2017/src/protocol"
-	"gonum.org/v1/gonum/graph/simple"
 )
 
 func ShuffleRivers(r []protocol.River) {
@@ -50,9 +49,13 @@ func ParseState(jsonState json.RawMessage) (*state, error) {
 	return s, nil
 }
 
-func (s *state) Update(g *simple.UndirectedGraph, m []protocol.Move) {
-	s.Map.Rivers = graph.SerializeRivers(g)
+func (s *state) Update(g *graph.Graph, m []protocol.Move) {
+	s.Map.Rivers = g.SerializeRivers()
 	s.Turn += uint64(len(m))
+}
+
+func weight(*graph.MetadataEdge) float64 {
+	return 1.0
 }
 
 type Brownian struct{}
@@ -65,9 +68,9 @@ func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	glog.Infof("Setup")
 
 	s := InitializeState(setup)
-	g := graph.Build(&s.Map)
+	g := graph.New(&s.Map, weight)
 
-	s.Distances = graph.ShortestDistances(g, s.Map.Mines)
+	s.Distances = g.ShortestDistances(s.Map.Mines)
 	s.ActiveMine = protocol.Site{s.Map.Mines[0]}
 	s.AvailableMines = make([]protocol.Site, len(s.Map.Mines[1:]))
 	for i, id := range s.Map.Mines[1:] {
@@ -83,7 +86,7 @@ func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	}, nil
 }
 
-func getUnownedAdjacent(g *simple.UndirectedGraph, siteID protocol.SiteID) []protocol.SiteID {
+func getUnownedAdjacent(g *graph.Graph, siteID protocol.SiteID) []protocol.SiteID {
 	currNode := g.Node(int64(siteID))
 	reachable := g.From(currNode)
 	unowned := make([]protocol.SiteID, 0, len(reachable))
@@ -125,7 +128,7 @@ func copySearchState(s *searchState) searchState {
 	return ss
 }
 
-func findNextBest(prefix string, depth int, g *simple.UndirectedGraph, s *state, ss searchState, siteID protocol.SiteID) (bool, uint64, protocol.SiteID) {
+func findNextBest(prefix string, depth int, g *graph.Graph, s *state, ss searchState, siteID protocol.SiteID) (bool, uint64, protocol.SiteID) {
 	reachable := getUnownedAdjacent(g, siteID)
 
 	for len(reachable) == 0 && len(ss.PrevSites) > 1 {
@@ -196,8 +199,8 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 		return nil, fmt.Errorf("error unmarshaling state %s: %v", string(jsonState), err)
 	}
 
-	g := graph.Build(&s.Map)
-	graph.UpdateGraph(g, m)
+	g := graph.New(&s.Map, weight)
+	g.Update(m)
 	s.Update(g, m)
 
 	currentSiteID := s.PrevSites[len(s.PrevSites)-1].ID

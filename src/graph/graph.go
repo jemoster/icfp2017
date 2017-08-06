@@ -35,13 +35,24 @@ func (m MetadataEdge) Weight() float64 {
 	return m.W
 }
 
-type WeightFunc func(owner uint64) float64
+// WeightFunc returns the weight of an edge.
+type WeightFunc func(e *MetadataEdge) float64
+
+// Graph is a simple.UndirectedGraph representing a protocol.Map.
+type Graph struct {
+	*simple.UndirectedGraph
+
+	weight WeightFunc
+}
 
 // BuildWithWeight returns a graph.Graph that represents m.
 //
 // ownedWeight returns the weight of an edge owned by p.
-func BuildWithWeight(m *protocol.Map, ownedWeight WeightFunc) *simple.UndirectedGraph {
-	g := simple.NewUndirectedGraph(0.0, math.Inf(0))
+func New(m *protocol.Map, weight WeightFunc) *Graph {
+	g := &Graph{
+		UndirectedGraph: simple.NewUndirectedGraph(0.0, math.Inf(0)),
+		weight:          weight,
+	}
 
 	for _, si := range m.Sites {
 		g.AddNode(simple.Node(si.ID))
@@ -52,29 +63,24 @@ func BuildWithWeight(m *protocol.Map, ownedWeight WeightFunc) *simple.Undirected
 		river = &MetadataEdge{
 			F:          g.Node(int64(r.Source)),
 			T:          g.Node(int64(r.Target)),
-			W:          1.0,
 			IsOwned:    r.IsOwned,
 			IsOptioned: r.IsOptioned,
 		}
 		if r.IsOwned {
 			river.OwnerPunter = r.OwnerPunter
-			river.W = ownedWeight(river.OwnerPunter)
 		}
 		if r.IsOptioned {
 			river.OptionPunter = r.OptionPunter
 		}
+		river.W = g.weight(river)
 		g.SetEdge(river)
 	}
 
 	return g
 }
 
-// Build returns a graph.Graph that represents m.
-func Build(m *protocol.Map) *simple.UndirectedGraph {
-	return BuildWithWeight(m, func(p uint64) float64 { return 1.0 })
-}
-
-func SerializeRivers(g *simple.UndirectedGraph) []protocol.River {
+// SerialRivers returns a slice of rivers containing edge metadata.
+func (g *Graph) SerializeRivers() []protocol.River {
 	edges := g.Edges()
 	rivers := make([]protocol.River, len(edges))
 	for i := range edges {
@@ -96,7 +102,8 @@ func SerializeRivers(g *simple.UndirectedGraph) []protocol.River {
 	return rivers
 }
 
-func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move, ownedWeight WeightFunc) {
+// Update adds the effect of the passed moves to the graph.
+func (g *Graph) Update(m []protocol.Move) {
 	for i := range m {
 		move := m[i]
 		var claim bool // true for claim, false for option.
@@ -133,18 +140,18 @@ func UpdateGraph(g *simple.UndirectedGraph, m []protocol.Move, ownedWeight Weigh
 			if claim {
 				edge.IsOwned = true
 				edge.OwnerPunter = punter
-				edge.W = ownedWeight(edge.OwnerPunter)
 			} else {
 				edge.IsOptioned = true
 				edge.OptionPunter = punter
 			}
+			edge.W = g.weight(edge)
 		}
 	}
 }
 
 // ShortestFrom returns a path.Shortest for a specific mine.
-func ShortestFrom(g *simple.UndirectedGraph, mine protocol.SiteID) path.Shortest {
-	return path.DijkstraFrom(g.Node(int64(mine)), g)
+func (g *Graph) ShortestFrom(mine protocol.SiteID) path.Shortest {
+	return path.DijkstraFrom(g.Node(int64(mine)), g.UndirectedGraph)
 }
 
 // Distances is a map from source mine ID to map of target site ID to distance.
@@ -153,11 +160,11 @@ type Distances map[protocol.SiteID]map[protocol.SiteID]uint64
 // ShortestDistances returns the distances from each mine to every site.
 //
 // g is a graph created by Build.
-func ShortestDistances(g *simple.UndirectedGraph, mines []protocol.SiteID) Distances {
+func (g *Graph) ShortestDistances(mines []protocol.SiteID) Distances {
 	sites := g.Nodes()
 	results := make(Distances, len(mines))
 	for _, mine := range mines {
-		shortest := ShortestFrom(g, mine)
+		shortest := g.ShortestFrom(mine)
 
 		results[mine] = make(map[protocol.SiteID]uint64, len(sites))
 		for _, site := range sites {
