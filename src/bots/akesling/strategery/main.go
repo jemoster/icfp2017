@@ -22,7 +22,7 @@ func ShuffleRivers(r []protocol.River) {
 }
 
 type state struct {
-	StrategyRegistry
+	StrategyStateRegistry
 
 	Punter              uint64
 	Punters             uint64
@@ -71,23 +71,13 @@ func (Strategery) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 		return math.Inf(0)
 	})
 
-	// TODO(akesling): Pull setup out into strategy-specific setup methods
-	// TODO(akesling): Prioritize claiming rivers for mines with fewer owned rivers.
-	// Add all mine-neighboring rivers to AvailableMineRivers
-	for i := range s.Map.Mines {
-		mine := s.Map.Mines[i]
-		neighbors := g.From(g.Node(int64(s.Map.Mines[i])))
-		for j := range neighbors {
-			n := neighbors[j]
-			newRiver := protocol.River{
-				Source: mine,
-				Target: protocol.SiteID(n.ID()),
-			}
-			s.AvailableMineRivers = append(s.AvailableMineRivers, newRiver)
-			s.UnconnectedOrigins = append(s.UnconnectedOrigins, newRiver)
+	strategies := AllStrategies(s, g)
+	for i := range strategies {
+		err := strategies[i].SetUp(s, g)
+		if err != nil {
+			glog.Errorf("Error occurred in the setup of %s: %s", strategies[i].Name(), err)
 		}
 	}
-	ShuffleRivers(s.AvailableMineRivers)
 
 	glog.Infof("Setup complete with available mine rivers %+v", s.AvailableMineRivers)
 	return &protocol.Ready{

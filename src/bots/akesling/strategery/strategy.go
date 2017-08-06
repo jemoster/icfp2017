@@ -10,17 +10,22 @@ import (
 )
 
 type Strategy interface {
+	Name() string
 	SetUp(s *state, g *simple.UndirectedGraph) error
 
 	IsApplicable(s *state, g *simple.UndirectedGraph) bool
 	Run(s *state, g *simple.UndirectedGraph) (*protocol.GameplayOutput, error)
 }
 
+func AllStrategies(s *state, g *simple.UndirectedGraph) []Strategy {
+	return []Strategy{CaptureMineAdjacentRivers{}, ConnectRivers{}, RandomWalkPaths{}}
+}
+
 func DetermineStrategies(s *state, g *simple.UndirectedGraph) []Strategy {
 	return []Strategy{CaptureMineAdjacentRivers{}, ConnectRivers{}, RandomWalkPaths{}}
 }
 
-type StrategyRegistry struct {
+type StrategyStateRegistry struct {
 	ActivePaths         [][]protocol.Site
 	UnconnectedOrigins  []protocol.River
 	AvailableMineRivers []protocol.River
@@ -28,7 +33,27 @@ type StrategyRegistry struct {
 
 type CaptureMineAdjacentRivers struct {}
 
+func (CaptureMineAdjacentRivers) Name() string {
+	return "CaptureMineAdjacentRivers"
+}
+
 func (CaptureMineAdjacentRivers) SetUp(s *state, g *simple.UndirectedGraph) error {
+	// TODO(akesling): Prioritize claiming rivers for mines with fewer owned rivers.
+	// Add all mine-neighboring rivers to AvailableMineRivers
+	for i := range s.Map.Mines {
+		mine := s.Map.Mines[i]
+		neighbors := g.From(g.Node(int64(s.Map.Mines[i])))
+		for j := range neighbors {
+			n := neighbors[j]
+			newRiver := protocol.River{
+				Source: mine,
+				Target: protocol.SiteID(n.ID()),
+			}
+			s.AvailableMineRivers = append(s.AvailableMineRivers, newRiver)
+		}
+	}
+	ShuffleRivers(s.AvailableMineRivers)
+
 	return nil
 }
 
@@ -73,7 +98,24 @@ func (CaptureMineAdjacentRivers) Run(s *state, g *simple.UndirectedGraph) (*prot
 
 type ConnectRivers struct {}
 
+func (ConnectRivers) Name() string {
+	return "ConnectRivers"
+}
+
 func (ConnectRivers) SetUp(s *state, g *simple.UndirectedGraph) error {
+	for i := range s.Map.Mines {
+		mine := s.Map.Mines[i]
+		neighbors := g.From(g.Node(int64(s.Map.Mines[i])))
+		for j := range neighbors {
+			n := neighbors[j]
+			s.UnconnectedOrigins = append(s.UnconnectedOrigins, protocol.River{
+				Source: mine,
+				Target: protocol.SiteID(n.ID()),
+			})
+		}
+	}
+	ShuffleRivers(s.UnconnectedOrigins)
+
 	return nil
 }
 
@@ -150,6 +192,10 @@ func (ConnectRivers) Run(s *state, g *simple.UndirectedGraph) (*protocol.Gamepla
 
 
 type RandomWalkPaths struct {}
+
+func (RandomWalkPaths) Name() string {
+	return "RandomWalkPaths"
+}
 
 func (RandomWalkPaths) SetUp(s *state, g *simple.UndirectedGraph) error {
 	return nil
