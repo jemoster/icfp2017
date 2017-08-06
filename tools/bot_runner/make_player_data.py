@@ -17,6 +17,7 @@ server = "punter.inf.ed.ac.uk"
 known_bots = {
     'robbrown': PYTHON_EXE + " -u src/pybots/ai_olrobbrown.py",
     'random': PYTHON_EXE + " -u src/pybots/ai_random.py",
+    'trollbot': PYTHON_EXE + " -u src/pybots/trollbot.py",
     'walk': './walk',
     'brownian': './brownian',
     'blob': './blob',
