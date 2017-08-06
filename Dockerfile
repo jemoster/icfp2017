@@ -12,6 +12,7 @@ RUN go get \
     gonum.org/v1/gonum/graph/internal/set \
     gonum.org/v1/gonum/graph/internal/ordered \
     gonum.org/v1/gonum/blas \
+    gonum.org/v1/gonum/graph/internal/linear \
     gonum.org/v1/gonum/internal/asm/c128 \
     gonum.org/v1/gonum/internal/asm/f32 \
     gonum.org/v1/gonum/floats \
@@ -22,7 +23,8 @@ RUN go get \
     gonum.org/v1/gonum/lapack/lapack64 \
     gonum.org/v1/gonum/mat \
     gonum.org/v1/gonum/graph/simple \
-    gonum.org/v1/gonum/graph/path
+    gonum.org/v1/gonum/graph/path \
+    gonum.org/v1/gonum/graph/traverse
 
 ENV PYTHONUNBUFFERED=1
 
