@@ -34,3 +34,5 @@ RUN go get -v github.com/jemoster/icfp2017/...
 RUN go build github.com/jemoster/icfp2017/src/bots/unremarkable/simpleton
 # build walkbot
 RUN go build github.com/jemoster/icfp2017/src/bots/prattmic/walk
+# build brownian
+RUN go build github.com/jemoster/icfp2017/src/bots/akesling/brownian
