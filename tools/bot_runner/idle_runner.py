@@ -4,7 +4,7 @@ import os
 import random
 import signal
 import time
-from server_status import read_status
+from server_status import read_status, waiting_for
 from adapter import OfflineAdapter
 from make_player_data import server, known_bots
 
@@ -12,7 +12,7 @@ from make_player_data import server, known_bots
 def idle_run():
     ''' Play a random game against an opening '''
     statuses = read_status()
-    openings = [k for k, v in statuses.items() if v['waiting'] > 0]
+    openings = [k for k, v in statuses.items() if waiting_for(v) > 0]
     choice = random.choice(openings)
     status = statuses[choice]
     port = int(choice)
