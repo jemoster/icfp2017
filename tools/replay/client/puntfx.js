@@ -192,7 +192,11 @@ function connect(gamePort, punterName) {
                 punterID = msg.punter;
                 numPunters = msg.punters;
 
-                logInfo("our punter ID: " + punterID);
+                logInfo("our punter ID: " + punterID + " color: " + getPunterColour(punterID));
+                $("#punter-color").css('width', '60px');
+                $("#punter-color").css('height', '60px');
+                $("#punter-color").css('background-color', getPunterColour(punterID));
+
                 logInfo("number of punters: " + numPunters);
                 logInfo("received initial game graph: " + JSON.stringify(msg.map));
                 graph = { "nodes": msg.map.sites,
