@@ -5,7 +5,7 @@ import argparse
 import random
 import os
 import time
-from server_status import read_status
+from server_status import read_status, waiting_for
 import platform
 
 PYTHON_EXE = "python3"
@@ -28,7 +28,7 @@ def find_new_game():
     stats = read_status()
     for x in range(len(stats)):
         entry = random.choice(list(stats.values()))
-        if entry['waiting'] > 0:
+        if waiting_for(entry) > 0:
             return entry
 
 
@@ -66,9 +66,9 @@ def find_port_and_run(bot_count, bot_list, default, directory, port):
     if not port:
         game = find_new_game()
         port = game['port']
-        bot_count = game['waiting']
+        bot_count = waiting_for(game)
     if not bot_count:
-        bot_count = read_status()[port]['waiting']
+        bot_count = waiting_for(read_status()[port])
     print('game', game)
     procs = []
     run_time = time.strftime("%Y-%m-%d_%H-%M-%S")
@@ -87,7 +87,7 @@ def find_port_and_run(bot_count, bot_list, default, directory, port):
         filename = os.path.join(directory, basename)
         cmd = " ".join(
             [PYTHON_EXE, "-u", "tools/bot_runner/online_adapter.py", '"{}"'.format(bot), str(port), '--record',
-             filename, '--header', '"{}"'.format(game['players'])])
+             filename, '--header', '"{}"'.format(game['punters'])])
         print('calling: ', cmd)
         procs.append(subprocess.Popen(cmd, shell=True))
     for proc in procs:

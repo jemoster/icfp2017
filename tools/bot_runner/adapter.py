@@ -4,6 +4,10 @@ import json
 import socket
 
 import utils
+from server_status import read_status
+
+
+DEFAULT_SERVER = 'punter.inf.ed.ac.uk'
 
 
 class OfflineAdapter:
@@ -23,10 +27,18 @@ class OfflineAdapter:
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             self.log_file = open(filename, 'w')
 
+            status = {}
+            if self.server == DEFAULT_SERVER:
+                try:
+                    status = read_status()[self.port]
+                except:
+                    pass  # Noop
+
             metadata = {
                 'metadata': 0,
                 'server': self.server,
                 'port': self.port,
+                'status': status,
             }
             if header:
                 metadata['extra'] = header
