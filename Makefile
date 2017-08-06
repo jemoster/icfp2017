@@ -4,8 +4,9 @@
 MAPS=-v /tmp/maps:/src/github.com/jemoster/icfp2017/maps
 PLAYLOG=-v /tmp/playlogs:/src/github.com/jemoster/icfp2017/data
 VOLS=$(MAPS) $(PLAYLOG)
-RUNNER=python3 -u tools/bot_runner/online_adapter.py
+RUNNER=./tools/bot_runner/online_adapter.py
 PLAYER=./tools/bot_runner/make_player_data.py
+IDLERUN=./tools/bot_runner/idle_runner.py
 
 all: run
 
@@ -25,7 +26,10 @@ walkbot-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./walk 9017
 
 brown-run: build
-	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/ai_olrobbrown.py 9019
+	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/ai_olrobbrown.py 9231
 
 multiplay: build
-	docker run $(VOLS) --rm boxes $(PLAYER) 4 9053
+	docker run $(VOLS) --rm boxes $(PLAYER) 3 9234
+
+idle-run: build
+	docker run $(VOLS) --rm boxes $(IDLERUN)
