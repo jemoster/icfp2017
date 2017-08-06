@@ -86,7 +86,7 @@ func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 		if (p == s.Punter) {
 			return 0.0
 		}
-		return 1000.0
+		return math.Inf(0)
 	})
 
 	// TODO(akesling): Prioritize claiming rivers for mines with fewer owned rivers.
