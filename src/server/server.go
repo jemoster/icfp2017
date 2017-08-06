@@ -100,7 +100,9 @@ func main() {
 	fmt.Printf("  Rivers: %d\n", len(mapData.Rivers))
 	fmt.Printf("  Mines:  %d\n", len(mapData.Mines))
 
-	gMap := graph.Build(mapData)
+	gMap := graph.New(mapData, func(*graph.MetadataEdge) float64 {
+		return 1.0
+	})
 
 	laddr := fmt.Sprintf(":%d", *srvPort)
 	srv, err := net.Listen("tcp", laddr)
@@ -230,7 +232,7 @@ func main() {
 		curPunter = (curPunter + 1) % *numPunters
 	}
 
-	sv := graph.Score(gMap, mapData.Mines, *numPunters)
+	sv := gMap.Score(mapData.Mines, *numPunters)
 
 	fmt.Printf("TALLIED %+v\n", sv)
 

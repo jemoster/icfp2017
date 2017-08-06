@@ -6,22 +6,21 @@ import (
 	"github.com/golang/glog"
 	"github.com/jemoster/icfp2017/src/graph"
 	"github.com/jemoster/icfp2017/src/protocol"
-	"gonum.org/v1/gonum/graph/simple"
 )
 
 type Strategy interface {
 	Name() string
-	SetUp(s *state, g *simple.UndirectedGraph) error
+	SetUp(s *state, g *graph.Graph) error
 
-	IsApplicable(s *state, g *simple.UndirectedGraph) bool
-	Run(s *state, g *simple.UndirectedGraph) (*protocol.GameplayOutput, error)
+	IsApplicable(s *state, g *graph.Graph) bool
+	Run(s *state, g *graph.Graph) (*protocol.GameplayOutput, error)
 }
 
-func AllStrategies(s *state, g *simple.UndirectedGraph) []Strategy {
+func AllStrategies(s *state, g *graph.Graph) []Strategy {
 	return []Strategy{CaptureMineAdjacentRivers{}, ConnectRivers{}, RandomWalkPaths{}}
 }
 
-func DetermineStrategies(s *state, g *simple.UndirectedGraph) []Strategy {
+func DetermineStrategies(s *state, g *graph.Graph) []Strategy {
 	return []Strategy{CaptureMineAdjacentRivers{}, ConnectRivers{}, RandomWalkPaths{}}
 }
 
@@ -37,7 +36,7 @@ func (CaptureMineAdjacentRivers) Name() string {
 	return "CaptureMineAdjacentRivers"
 }
 
-func (CaptureMineAdjacentRivers) SetUp(s *state, g *simple.UndirectedGraph) error {
+func (CaptureMineAdjacentRivers) SetUp(s *state, g *graph.Graph) error {
 	// TODO(akesling): Prioritize claiming rivers for mines with fewer owned rivers.
 	// Add all mine-neighboring rivers to AvailableMineRivers
 	for i := range s.Map.Mines {
@@ -57,14 +56,14 @@ func (CaptureMineAdjacentRivers) SetUp(s *state, g *simple.UndirectedGraph) erro
 	return nil
 }
 
-func (CaptureMineAdjacentRivers) IsApplicable(s *state, g *simple.UndirectedGraph) bool {
+func (CaptureMineAdjacentRivers) IsApplicable(s *state, g *graph.Graph) bool {
 	if len(s.AvailableMineRivers) == 0 {
 		return false
 	}
 	return true
 }
 
-func (CaptureMineAdjacentRivers) Run(s *state, g *simple.UndirectedGraph) (*protocol.GameplayOutput, error) {
+func (CaptureMineAdjacentRivers) Run(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
 	glog.Info("Surrounding mines")
 	// Grab all rivers around mines.
 	i := 0
@@ -102,7 +101,7 @@ func (ConnectRivers) Name() string {
 	return "ConnectRivers"
 }
 
-func (ConnectRivers) SetUp(s *state, g *simple.UndirectedGraph) error {
+func (ConnectRivers) SetUp(s *state, g *graph.Graph) error {
 	for i := range s.Map.Mines {
 		mine := s.Map.Mines[i]
 		neighbors := g.From(g.Node(int64(s.Map.Mines[i])))
@@ -119,14 +118,14 @@ func (ConnectRivers) SetUp(s *state, g *simple.UndirectedGraph) error {
 	return nil
 }
 
-func (ConnectRivers) IsApplicable(s *state, g *simple.UndirectedGraph) bool {
+func (ConnectRivers) IsApplicable(s *state, g *graph.Graph) bool {
 	if len(s.UnconnectedOrigins) <= 1 {
 		return false
 	}
 	return true
 }
 
-func (ConnectRivers) Run(s *state, g *simple.UndirectedGraph) (*protocol.GameplayOutput, error) {
+func (ConnectRivers) Run(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
 	// Connect our rivers if possible.
 	// TODO(akesling): Make sure we connect all paths through edges that aren't
 	// _through_ a mine (i.e. foo -> mine1 -> bar -> mine2 won't count foo as
@@ -143,7 +142,7 @@ func (ConnectRivers) Run(s *state, g *simple.UndirectedGraph) (*protocol.Gamepla
 			}
 
 			end := s.UnconnectedOrigins[j].Target
-			shortTree := graph.ShortestFrom(g, start)
+			shortTree := g.ShortestFrom(start)
 			weight := shortTree.WeightTo(g.Node(int64(end)))
 			if weight == 0 {
 				// We're already connected
@@ -190,18 +189,17 @@ func (ConnectRivers) Run(s *state, g *simple.UndirectedGraph) (*protocol.Gamepla
 	return nil, nil
 }
 
-
 type RandomWalkPaths struct {}
 
 func (RandomWalkPaths) Name() string {
 	return "RandomWalkPaths"
 }
 
-func (RandomWalkPaths) SetUp(s *state, g *simple.UndirectedGraph) error {
+func (RandomWalkPaths) SetUp(s *state, g *graph.Graph) error {
 	return nil
 }
 
-func (RandomWalkPaths) IsApplicable(s *state, g *simple.UndirectedGraph) bool {
+func (RandomWalkPaths) IsApplicable(s *state, g *graph.Graph) bool {
 	if len(s.ActivePaths) == 0 {
 		glog.Infof("No active paths available to follow.")
 		return false
@@ -209,7 +207,7 @@ func (RandomWalkPaths) IsApplicable(s *state, g *simple.UndirectedGraph) bool {
 	return true
 }
 
-func (RandomWalkPaths) Run(s *state, g *simple.UndirectedGraph) (*protocol.GameplayOutput, error) {
+func (RandomWalkPaths) Run(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
 	glog.Infof("Following an active path")
 	// TODO(akesling): Go path by path instead of just following one.
 

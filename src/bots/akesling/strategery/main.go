@@ -11,7 +11,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/jemoster/icfp2017/src/graph"
 	"github.com/jemoster/icfp2017/src/protocol"
-	"gonum.org/v1/gonum/graph/simple"
 )
 
 func ShuffleRivers(r []protocol.River) {
@@ -49,12 +48,26 @@ func ParseState(jsonState json.RawMessage) (*state, error) {
 	return s, nil
 }
 
-func (s *state) Update(g *simple.UndirectedGraph, m []protocol.Move) {
-	s.Map.Rivers = graph.SerializeRivers(g)
+func (s *state) Update(g *graph.Graph, m []protocol.Move) {
+	s.Map.Rivers = g.SerializeRivers()
 	s.Turn += uint64(len(m))
 }
 
 type Strategery struct{}
+
+func (s *state) weightFunc() graph.WeightFunc {
+	return func(e *graph.MetadataEdge) float64 {
+		if !e.IsOwned {
+			return 1.0
+		}
+
+		if e.OwnerPunter == s.Punter {
+			return 0.0
+		}
+
+		return math.Inf(0)
+	}
+}
 
 func (Strategery) Name() string {
 	return "Strategery"
@@ -64,12 +77,7 @@ func (Strategery) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	glog.Infof("Setup")
 
 	s := InitializeState(setup)
-	g := graph.BuildWithWeight(&s.Map, func(p uint64) float64 {
-		if p == s.Punter {
-			return 0.0
-		}
-		return math.Inf(0)
-	})
+	g := graph.New(&s.Map, s.weightFunc())
 
 	strategies := AllStrategies(s, g)
 	for i := range strategies {
@@ -94,14 +102,8 @@ func (Strategery) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.
 		return nil, fmt.Errorf("error unmarshaling state %s: %v", string(jsonState), err)
 	}
 
-	weight := func(p uint64) float64 {
-		if p == s.Punter {
-			return 0.0
-		}
-		return math.Inf(0)
-	}
-	g := graph.BuildWithWeight(&s.Map, weight)
-	graph.UpdateGraph(g, m, weight)
+	g := graph.New(&s.Map, s.weightFunc())
+	g.Update(m)
 	s.Update(g, m)
 	glog.Infof("Turn: %d", s.Turn)
 

@@ -47,11 +47,13 @@ func main() {
 
 	debugf("Parsed map: %+v\n", m)
 
-	g := graph.Build(m)
+	g := graph.New(m, func(*graph.MetadataEdge) float64 {
+		return 1.0
+	})
 
 	debugf("Graph: %+v\n", g)
 
-	results := graph.ShortestDistances(g, m.Mines)
+	results := g.ShortestDistances(m.Mines)
 
 	debugf("Results: %+v\n", results)
 
