@@ -21,12 +21,11 @@ func ShuffleRivers(r []protocol.River) {
 }
 
 type state struct {
+	StrategyStateRegistry
+
 	Punter              uint64
 	Punters             uint64
 	Map                 protocol.Map
-	ActivePaths         [][]protocol.Site
-	UnconnectedOrigins  []protocol.River
-	AvailableMineRivers []protocol.River
 
 	Turn uint64
 }
@@ -54,6 +53,8 @@ func (s *state) Update(g *graph.Graph, m []protocol.Move) {
 	s.Turn += uint64(len(m))
 }
 
+type Strategery struct{}
+
 func (s *state) weightFunc() graph.WeightFunc {
 	return func(e *graph.MetadataEdge) float64 {
 		if !e.IsOwned {
@@ -68,34 +69,23 @@ func (s *state) weightFunc() graph.WeightFunc {
 	}
 }
 
-type Brownian struct{}
-
-func (Brownian) Name() string {
-	return "Brownian"
+func (Strategery) Name() string {
+	return "Strategery"
 }
 
-func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
+func (Strategery) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	glog.Infof("Setup")
 
 	s := InitializeState(setup)
 	g := graph.New(&s.Map, s.weightFunc())
 
-	// TODO(akesling): Prioritize claiming rivers for mines with fewer owned rivers.
-	// Add all mine-neighboring rivers to AvailableMineRivers
-	for i := range s.Map.Mines {
-		mine := s.Map.Mines[i]
-		neighbors := g.From(g.Node(int64(s.Map.Mines[i])))
-		for j := range neighbors {
-			n := neighbors[j]
-			newRiver := protocol.River{
-				Source: mine,
-				Target: protocol.SiteID(n.ID()),
-			}
-			s.AvailableMineRivers = append(s.AvailableMineRivers, newRiver)
-			s.UnconnectedOrigins = append(s.UnconnectedOrigins, newRiver)
+	strategies := AllStrategies(s, g)
+	for i := range strategies {
+		err := strategies[i].SetUp(s, g)
+		if err != nil {
+			glog.Errorf("Error occurred in the setup of %s: %s", strategies[i].Name(), err)
 		}
 	}
-	ShuffleRivers(s.AvailableMineRivers)
 
 	glog.Infof("Setup complete with available mine rivers %+v", s.AvailableMineRivers)
 	return &protocol.Ready{
@@ -104,7 +94,7 @@ func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	}, nil
 }
 
-func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.GameplayOutput, error) {
+func (Strategery) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.GameplayOutput, error) {
 	glog.Infof("Play")
 
 	s, err := ParseState(jsonState)
@@ -119,7 +109,12 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 
 	strategies := DetermineStrategies(s, g)
 	for i := range strategies {
-		output, err := strategies[i](s, g)
+		strat := strategies[i]
+		if !strat.IsApplicable(s, g) {
+			continue
+		}
+
+		output, err := strat.Run(s, g)
 		if err != nil {
 			return nil, err
 		}
@@ -139,7 +134,7 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 	}, nil
 }
 
-func (Brownian) Stop(stop *protocol.Stop, jsonState json.RawMessage) error {
+func (Strategery) Stop(stop *protocol.Stop, jsonState json.RawMessage) error {
 	glog.Infof("Stop: %+v", stop)
 
 	var s state
@@ -154,7 +149,7 @@ func main() {
 	flag.Set("logtostderr", "true")
 	flag.Parse()
 
-	var s Brownian
+	var s Strategery
 	if err := protocol.Play(os.Stdin, os.Stdout, &s); err != nil {
 		glog.Exitf("Play failed: %v", err)
 	}

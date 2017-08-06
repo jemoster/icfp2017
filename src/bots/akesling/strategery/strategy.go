@@ -8,17 +8,62 @@ import (
 	"github.com/jemoster/icfp2017/src/protocol"
 )
 
-type Strategy func(s *state, g *graph.Graph) (*protocol.GameplayOutput, error)
+type Strategy interface {
+	Name() string
+	SetUp(s *state, g *graph.Graph) error
 
-func DetermineStrategies(s *state, g *graph.Graph) []Strategy {
-	return []Strategy{CaptureMineAdjacentRivers, ConnectRivers, RandomWalkPaths}
+	IsApplicable(s *state, g *graph.Graph) bool
+	Run(s *state, g *graph.Graph) (*protocol.GameplayOutput, error)
 }
 
-func CaptureMineAdjacentRivers(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
-	if len(s.AvailableMineRivers) == 0 {
-		return nil, nil
-	}
+func AllStrategies(s *state, g *graph.Graph) []Strategy {
+	return []Strategy{CaptureMineAdjacentRivers{}, ConnectRivers{}, RandomWalkPaths{}}
+}
 
+func DetermineStrategies(s *state, g *graph.Graph) []Strategy {
+	return []Strategy{CaptureMineAdjacentRivers{}, ConnectRivers{}, RandomWalkPaths{}}
+}
+
+type StrategyStateRegistry struct {
+	ActivePaths         [][]protocol.Site
+	UnconnectedOrigins  []protocol.River
+	AvailableMineRivers []protocol.River
+}
+
+type CaptureMineAdjacentRivers struct {}
+
+func (CaptureMineAdjacentRivers) Name() string {
+	return "CaptureMineAdjacentRivers"
+}
+
+func (CaptureMineAdjacentRivers) SetUp(s *state, g *graph.Graph) error {
+	// TODO(akesling): Prioritize claiming rivers for mines with fewer owned rivers.
+	// Add all mine-neighboring rivers to AvailableMineRivers
+	for i := range s.Map.Mines {
+		mine := s.Map.Mines[i]
+		neighbors := g.From(g.Node(int64(s.Map.Mines[i])))
+		for j := range neighbors {
+			n := neighbors[j]
+			newRiver := protocol.River{
+				Source: mine,
+				Target: protocol.SiteID(n.ID()),
+			}
+			s.AvailableMineRivers = append(s.AvailableMineRivers, newRiver)
+		}
+	}
+	ShuffleRivers(s.AvailableMineRivers)
+
+	return nil
+}
+
+func (CaptureMineAdjacentRivers) IsApplicable(s *state, g *graph.Graph) bool {
+	if len(s.AvailableMineRivers) == 0 {
+		return false
+	}
+	return true
+}
+
+func (CaptureMineAdjacentRivers) Run(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
 	glog.Info("Surrounding mines")
 	// Grab all rivers around mines.
 	i := 0
@@ -50,15 +95,41 @@ func CaptureMineAdjacentRivers(s *state, g *graph.Graph) (*protocol.GameplayOutp
 	return nil, nil
 }
 
-func ConnectRivers(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
+type ConnectRivers struct {}
+
+func (ConnectRivers) Name() string {
+	return "ConnectRivers"
+}
+
+func (ConnectRivers) SetUp(s *state, g *graph.Graph) error {
+	for i := range s.Map.Mines {
+		mine := s.Map.Mines[i]
+		neighbors := g.From(g.Node(int64(s.Map.Mines[i])))
+		for j := range neighbors {
+			n := neighbors[j]
+			s.UnconnectedOrigins = append(s.UnconnectedOrigins, protocol.River{
+				Source: mine,
+				Target: protocol.SiteID(n.ID()),
+			})
+		}
+	}
+	ShuffleRivers(s.UnconnectedOrigins)
+
+	return nil
+}
+
+func (ConnectRivers) IsApplicable(s *state, g *graph.Graph) bool {
+	if len(s.UnconnectedOrigins) <= 1 {
+		return false
+	}
+	return true
+}
+
+func (ConnectRivers) Run(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
 	// Connect our rivers if possible.
 	// TODO(akesling): Make sure we connect all paths through edges that aren't
 	// _through_ a mine (i.e. foo -> mine1 -> bar -> mine2 won't count foo as
 	// attached to the mine2).
-	if len(s.UnconnectedOrigins) <= 1 {
-		return nil, nil
-	}
-
 	glog.Info("Connecting mines")
 	var processed int
 	for i := range s.UnconnectedOrigins {
@@ -118,12 +189,25 @@ func ConnectRivers(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
 	return nil, nil
 }
 
-func RandomWalkPaths(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
+type RandomWalkPaths struct {}
+
+func (RandomWalkPaths) Name() string {
+	return "RandomWalkPaths"
+}
+
+func (RandomWalkPaths) SetUp(s *state, g *graph.Graph) error {
+	return nil
+}
+
+func (RandomWalkPaths) IsApplicable(s *state, g *graph.Graph) bool {
 	if len(s.ActivePaths) == 0 {
 		glog.Infof("No active paths available to follow.")
-		return nil, nil
+		return false
 	}
+	return true
+}
 
+func (RandomWalkPaths) Run(s *state, g *graph.Graph) (*protocol.GameplayOutput, error) {
 	glog.Infof("Following an active path")
 	// TODO(akesling): Go path by path instead of just following one.
 
