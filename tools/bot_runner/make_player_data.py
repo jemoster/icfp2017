@@ -18,7 +18,6 @@ known_bots = {
     'robbrown': PYTHON_EXE + " -u src/pybots/ai_olrobbrown.py",
     'random': PYTHON_EXE + " -u src/pybots/ai_random.py",
     'walk': './walk',
-    'simple': './simpleton',
     'brownian': './brownian',
 }
 

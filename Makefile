@@ -37,5 +37,5 @@ robbrown-run: build
 multiplay: build
 	docker run $(VOLS) --rm boxes $(PLAYER) 3 9234
 
-idle-run: build
-	docker run $(VOLS) -d --rm boxes $(IDLERUN)
+idle-run:
+	docker run $(VOLS) -d boxes $(IDLERUN)
