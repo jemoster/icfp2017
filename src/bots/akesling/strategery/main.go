@@ -22,12 +22,11 @@ func ShuffleRivers(r []protocol.River) {
 }
 
 type state struct {
+	StrategyRegistry
+
 	Punter              uint64
 	Punters             uint64
 	Map                 protocol.Map
-	ActivePaths         [][]protocol.Site
-	UnconnectedOrigins  []protocol.River
-	AvailableMineRivers []protocol.River
 
 	Turn uint64
 }
@@ -72,6 +71,7 @@ func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 		return math.Inf(0)
 	})
 
+	// TODO(akesling): Pull setup out into strategy-specific setup methods
 	// TODO(akesling): Prioritize claiming rivers for mines with fewer owned rivers.
 	// Add all mine-neighboring rivers to AvailableMineRivers
 	for i := range s.Map.Mines {
@@ -117,7 +117,12 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 
 	strategies := DetermineStrategies(s, g)
 	for i := range strategies {
-		output, err := strategies[i](s, g)
+		strat := strategies[i]
+		if !strat.IsApplicable(s, g) {
+			continue
+		}
+
+		output, err := strat.Run(s, g)
 		if err != nil {
 			return nil, err
 		}
