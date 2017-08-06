@@ -65,7 +65,7 @@ const graphStyle = [
       "font-size": 4,
       "color": "#fff",
       "line-color": "yellow",
-      "width": 35
+      "width": 15
       }
   },
 
