@@ -222,9 +222,6 @@ func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 		if move.Claim != nil {
 			edge := g.EdgeBetween(g.Node(int64(move.Claim.Source)), g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
 			if edge.IsOwned {
-				// TODO(prattmic): pickMoves only picks moves
-				// from mines. It won't pick from nodes I
-				// already own.
 				glog.Warningf("Move %v: river already taken by %d! Recomputing moves.", move, edge.Punter)
 				s.Moves = pickMoves(g, s, len(s.Moves))
 				continue
@@ -232,6 +229,28 @@ func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 		}
 
 		return move
+	}
+}
+
+func checkMoves(g *simple.UndirectedGraph, s *state, m []protocol.Move)  {
+	for _, theirMove := range m {
+		if theirMove.Claim == nil {
+			continue
+		}
+
+		their := makeClaim(theirMove.Claim.Source, theirMove.Claim.Target)
+
+		for _, ourMove := range s.Moves {
+			if ourMove.Claim == nil {
+				continue
+			}
+
+			our := makeClaim(ourMove.Claim.Source, ourMove.Claim.Target)
+			if our == their {
+				glog.Warningf("Future move %v taken by %d! Recomputing moves.", ourMove, theirMove.Claim.Punter)
+				s.Moves = pickMoves(g, s, len(s.Moves))
+			}
+		}
 	}
 }
 
@@ -253,9 +272,10 @@ func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 		}
 		return math.Inf(0)
 	})
-	// TODO(prattmic): Recompute immediately if a future move is taken.
 	graph.UpdateGraph(g, m)
 	s.Map.Rivers = graph.SerializeRivers(g)
+
+	checkMoves(g, &s, m)
 
 	move := nextMove(g, &s)
 
