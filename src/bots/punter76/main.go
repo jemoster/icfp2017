@@ -71,10 +71,10 @@ func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	g := graph.New(&s.Map, weight)
 
 	s.Distances = g.ShortestDistances(s.Map.Mines)
-	s.ActiveMine = protocol.Site{s.Map.Mines[0]}
+	s.ActiveMine = protocol.Site{ID: s.Map.Mines[0]}
 	s.AvailableMines = make([]protocol.Site, len(s.Map.Mines[1:]))
 	for i, id := range s.Map.Mines[1:] {
-		s.AvailableMines[i] = protocol.Site{id}
+		s.AvailableMines[i] = protocol.Site{ID: id}
 	}
 	s.PrevSites = make([]protocol.Site, 1)
 	s.PrevSites[0] = s.ActiveMine
@@ -158,7 +158,7 @@ func findNextBest(prefix string, depth int, g *graph.Graph, s *state, ss searchS
 
 	if depth > 1 {
 		// Find best move that makes path longer
-		ss.PrevSites = append(ss.PrevSites, protocol.Site{siteID})
+		ss.PrevSites = append(ss.PrevSites, protocol.Site{ID: siteID})
 		found, score, bestSite := findNextBest(prefix+"    ", depth-1, g, s, copySearchState(&ss), reachable[0])
 		max := score
 		best := protocol.SiteID(reachable[0].ID())
@@ -220,7 +220,7 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 		}, nil
 	}
 
-	s.PrevSites = append(s.PrevSites, protocol.Site{site})
+	s.PrevSites = append(s.PrevSites, protocol.Site{ID: site})
 	return &protocol.GameplayOutput{
 		Move: protocol.Move{
 			Claim: &protocol.Claim{
