@@ -35,6 +35,9 @@ blob-run: build
 random-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/ai_random.py 9018
 
+trollbot-run: build
+	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/trollbot.py 9231
+
 robbrown-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/ai_olrobbrown.py 9231
 
