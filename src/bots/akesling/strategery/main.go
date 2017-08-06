@@ -54,13 +54,13 @@ func (s *state) Update(g *simple.UndirectedGraph, m []protocol.Move) {
 	s.Turn += uint64(len(m))
 }
 
-type Brownian struct{}
+type Strategery struct{}
 
-func (Brownian) Name() string {
-	return "Brownian"
+func (Strategery) Name() string {
+	return "Strategery"
 }
 
-func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
+func (Strategery) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	glog.Infof("Setup")
 
 	s := InitializeState(setup)
@@ -96,7 +96,7 @@ func (Brownian) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 	}, nil
 }
 
-func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.GameplayOutput, error) {
+func (Strategery) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.GameplayOutput, error) {
 	glog.Infof("Play")
 
 	s, err := ParseState(jsonState)
@@ -142,7 +142,7 @@ func (Brownian) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.Ga
 	}, nil
 }
 
-func (Brownian) Stop(stop *protocol.Stop, jsonState json.RawMessage) error {
+func (Strategery) Stop(stop *protocol.Stop, jsonState json.RawMessage) error {
 	glog.Infof("Stop: %+v", stop)
 
 	var s state
@@ -157,7 +157,7 @@ func main() {
 	flag.Set("logtostderr", "true")
 	flag.Parse()
 
-	var s Brownian
+	var s Strategery
 	if err := protocol.Play(os.Stdin, os.Stdout, &s); err != nil {
 		glog.Exitf("Play failed: %v", err)
 	}
