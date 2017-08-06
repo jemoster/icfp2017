@@ -38,10 +38,16 @@ type HandshakeServerClient struct {
 	You string `json:"me"`
 }
 
+type Settings struct {
+	Futures  bool `json:futures"`
+	Splurges bool `json:splurges"`
+}
+
 type Setup struct {
-	Punter  uint64 `json:"punter"`
-	Punters uint64 `json:"punters"`
-	Map     Map    `json:"map"`
+	Punter   uint64   `json:"punter"`
+	Punters  uint64   `json:"punters"`
+	Map      Map      `json:"map"`
+	Settings Settings `json:"settings"`
 }
 
 type Ready struct {
@@ -62,9 +68,15 @@ type Pass struct {
 	Punter uint64 `json:"punter"`
 }
 
+type Splurge struct {
+	Punter uint64   `json:"punter"`
+	Route  []SiteID `json:"route"`
+}
+
 type Move struct {
-	Claim *Claim `json:"claim,omitempty"`
-	Pass  *Pass  `json:"pass,omitempty"`
+	Claim   *Claim   `json:"claim,omitempty"`
+	Pass    *Pass    `json:"pass,omitempty"`
+	Splurge *Splurge `json:"splurge,omitempty"`
 }
 
 func (m Move) String() string {
