@@ -28,6 +28,9 @@ walkbot-run: build
 brownian-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./brownian 9196
 
+random-run: build
+	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/ai_random.py 9018
+
 robbrown-run: build
 	docker run $(VOLS) --rm boxes $(RUNNER) ./src/pybots/ai_olrobbrown.py 9231
 
