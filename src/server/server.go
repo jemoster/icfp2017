@@ -12,7 +12,7 @@ import (
 
 	"bufio"
 	"encoding/json"
-	
+
 	"github.com/jemoster/icfp2017/src/graph"
 
 	. "github.com/jemoster/icfp2017/src/protocol"
@@ -42,7 +42,7 @@ func loadMap(path string) (*Map, error) {
 
 type Punter struct {
 	conn net.Conn
-	
+
 	reader *bufio.Reader
 	writer io.Writer
 }
@@ -99,7 +99,7 @@ func main() {
 	fmt.Printf("  Sites:  %d\n", len(mapData.Sites))
 	fmt.Printf("  Rivers: %d\n", len(mapData.Rivers))
 	fmt.Printf("  Mines:  %d\n", len(mapData.Mines))
-	
+
 	gMap := graph.Build(mapData)
 
 	laddr := fmt.Sprintf(":%d", *srvPort)
@@ -107,7 +107,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	defer srv.Close()
 
 	fmt.Printf("-\n")
@@ -122,11 +122,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		
+
 		punters[i].conn = conn
 		punters[i].reader = bufio.NewReader(conn)
 		punters[i].writer = conn
-		
+
 		fmt.Printf("  [%d/%d] Client connected.\n", i+1, *numPunters)
 	}
 
@@ -175,80 +175,80 @@ func main() {
 	curPunter := 0
 	sM := new(sendMove)
 	sM.Move.Moves = make([]Move, *numPunters)
-	
+
 	for i, _ := range punters {
-		sM.Move.Moves[i].Pass = &Pass{ uint64(i) }
+		sM.Move.Moves[i].Pass = &Pass{uint64(i)}
 	}
-	
+
 	for curTurn := 0; curTurn < len(mapData.Rivers); curTurn++ {
 		punter := &punters[curPunter]
-		
+
 		if err := Send(punter.writer, sM); err != nil {
 			log.Fatal(err)
 		}
-		
+
 		var rM recvMove
 		if err := Recv(punter.reader, &rM); err != nil {
 			log.Fatal(err)
 		}
-		
+
 		fmt.Printf("[%d] received Move From %d: %+v\n", curTurn, curPunter, rM.Move)
 
 		switch {
 		case rM.Move.Claim != nil:
 			claim := rM.Move.Claim
-			
+
 			ok := gMap.HasEdgeBetween(claim.Source, claim.Target)
-			
+
 			if !ok {
 				fmt.Printf("[%d] claimed a river that doesn't exist! D:")
 				goto failure // what is this shit
 			} else {
 				river := gMap.EdgeBetween(claim.Source, claim.Target).(*graph.MetadataEdge)
-				
+
 				if river.IsOwned {
 					fmt.Printf("[%d] claimed a river that has already been claimed! D:")
 					goto failure // this is what happens when you try to be fancy
 				}
-				
+
 				river.IsOwned = true
 				river.Punter = uint64(curPunter)
-				
+
 				sM.Move.Moves[curPunter].Claim = rM.Move.Claim
 			}
-			
+
 			break
 		failure:
 			fallthrough
 		default:
-			sM.Move.Moves[curPunter].Pass = &Pass { uint64(curPunter) }
-		
+			sM.Move.Moves[curPunter].Pass = &Pass{uint64(curPunter)}
+
 			break
 		}
 		sM.Move.Moves[curPunter] = rM.Move
-		
+
 		curPunter = (curPunter + 1) % *numPunters
 	}
-	
+
 	sv := graph.Score(gMap, mapData.Mines, *numPunters)
-	
+
 	fmt.Printf("TALLIED %+v\n", sv)
-	
-	sS := sendStop {
-		Stop {
-			Moves: sM.Move.Moves,
+
+	sS := sendStop{
+		Stop{
+			Moves:  sM.Move.Moves,
 			Scores: sv,
 		},
 	}
-	
+
 	for i := 0; i < *numPunters; i++ {
 		punter := &punters[curPunter]
-		
+
 		if err := Send(punter.writer, sS); err != nil {
 			log.Fatal(err)
 		}
 	}
-	
+
 	for _, punter := range punters {
 		punter.conn.Close()
 	}

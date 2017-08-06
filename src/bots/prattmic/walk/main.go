@@ -230,7 +230,7 @@ func nextMove(g *simple.UndirectedGraph, s *state) protocol.Move {
 	}
 }
 
-func checkMoves(g *simple.UndirectedGraph, s *state, m []protocol.Move)  {
+func checkMoves(g *simple.UndirectedGraph, s *state, m []protocol.Move) {
 	for _, theirMove := range m {
 		if theirMove.Claim == nil {
 			continue
