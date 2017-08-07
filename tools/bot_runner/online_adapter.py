@@ -16,12 +16,13 @@ def main():
                         help='The game server to connect to defaults to "punter.inf.ed.ac.uk"')
     parser.add_argument('--record', action="store", default=None, help='filename to save playlog to')
     parser.add_argument('--header', action="store", type=str, default=None)
+    parser.add_argument('--realtime', action="store_true", default=None)
     results = parser.parse_args()
 
     if results.record is None:
         results.record = os.path.join('data', 'online', str(int(time.time())))
 
-    adapter = OfflineAdapter(results.server, results.port, results.exe, results.record, results.header)
+    adapter = OfflineAdapter(results.server, results.port, results.exe, results.record, results.header, results.realtime)
     scores = adapter.run()
 
     for player in scores:

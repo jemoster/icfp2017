@@ -1,17 +1,17 @@
-import os
-import subprocess
 import json
+import os
 import socket
+import subprocess
+from multiprocessing import Process, Queue
 
 import utils
 from server_status import read_status
-
 
 DEFAULT_SERVER = 'punter.inf.ed.ac.uk'
 
 
 class OfflineAdapter:
-    def __init__(self, server, port, exe, log=None, header=None):
+    def __init__(self, server, port, exe, log=None, header=None, realtime=False):
         self.server = server
         self.port = port
         self.exe = exe
@@ -20,6 +20,8 @@ class OfflineAdapter:
 
         self._socket = None
         self.buffer = ''
+
+        self._realtime_queue = None
 
         self.log_file = None
         if log is not None:
@@ -45,12 +47,25 @@ class OfflineAdapter:
 
             self.log_file.write(json.dumps(metadata) + '\n')
 
+        if realtime:
+            self._start_realtime()
+
+    def _start_realtime(self):
+        from realtime_viewer import realtime_viewer
+
+        self._realtime_queue = Queue()
+        self.rt_process = Process(target=realtime_viewer, args=(self._realtime_queue,))
+        self.rt_process.start()
+
     def connect(self):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect((self.server, self.port))
 
     def disconnect(self):
         self._socket.close()
+        if self._realtime_queue:
+            self._realtime_queue.put('stop')
+            self.rt_process.join()
 
     def send(self, msg):
         print(">>  {}".format(json.dumps(msg)))
@@ -78,6 +93,8 @@ class OfflineAdapter:
         print("<<  {}".format(json.dumps(msg)))
         if self.log_file:
             self.log_file.write("<< {}\n".format(json.dumps(msg)))
+        if self._realtime_queue:
+            self._realtime_queue.put(json.dumps(msg))
         return msg
 
     def run(self):

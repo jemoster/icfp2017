@@ -35,7 +35,12 @@ async def hello(websocket, path):
             await asyncio.sleep(rate)
     print('DONE')
 
-start_server = websockets.serve(hello, 'localhost', 5000)
 
-asyncio.get_event_loop().run_until_complete(start_server)
-asyncio.get_event_loop().run_forever()
+def replay_viewer():
+    start_server = websockets.serve(hello, 'localhost', 5000)
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
+
+
+if __name__ == "__main__":
+    replay_viewer()
