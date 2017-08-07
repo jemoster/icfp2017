@@ -6,8 +6,9 @@ const graphStyle = [
     "style": {
       "background-color": "white",
       "border-color": "black",
-      "width": 40,
-      "height": 40,
+      "opacity": "0.9",
+      "width": 35,
+      "height": 35,
       "min-zoomed-font-size": 12,
       "color": "#fff",
       "font-size": 16,
@@ -20,8 +21,9 @@ const graphStyle = [
     "style": {
       "background-color": "red",
       "border-color": "white",
-      "width": 140,
-      "height": 140,
+      "opacity": "0.88",
+      "width": 100,
+      "height": 100,
       "color": "#000",
       "font-size": 72,
       "font-weight": "bold",
@@ -49,6 +51,7 @@ const graphStyle = [
   { "selector": "edge",
     "style": {
       "min-zoomed-font-size": 1,
+      "opacity": "0.93",
       "font-size": 64,
       "color": "#FFF",
       "line-color": "#4a4a50",
