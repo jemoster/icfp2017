@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-
 	"github.com/golang/glog"
 	"github.com/jemoster/icfp2017/src/protocol"
 )
