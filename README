@@ -1,6 +1,17 @@
 Team Members
 ------------
 
+Alex Kesling
+Alex Ray
+Andrew Hausch
+Christopher Fox
+Free Wortley
+Ilaan Shtaygrud
+Joe Moster
+Kim Nguyen
+Michael Pratt
+Michael Yenik
+
 Packages Used
 -------------
 
@@ -9,4 +20,8 @@ Go 1.7.6
 Description
 -----------
 
-The source of interest is in src/github.com/jemoster/icfp2017/src/.
+The source of interest is in src/github.com/jemoster/icfp2017/src/. The rest of
+src/ is vendored dependencies.
+
+src/github.com/jemoster/icfp2017/src/bots/prattmic/walk/ has the main bot
+source.
