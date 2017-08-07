@@ -176,3 +176,46 @@ func (g *Graph) ShortestDistances(mines []protocol.SiteID) Distances {
 
 	return results
 }
+
+type Path []graph.Node
+type Paths []Path
+
+
+func ShortestPaths(g *simple.UndirectedGraph, mines []protocol.SiteID) map[int64]map[int64]Path{
+	//I want list of paths, where each path is a list of nodes which connect one mine to another.
+
+	sites := g.Nodes()
+	var results map[int64]map[int64]Path
+	for _, mineStart := range mines {
+
+		shortest := ShortestFrom(g, mineStart)
+		for _, mineStop := range mines {
+
+			sp, _ := shortest.To(g.Node(mineStop.ID()))
+			results[mineStart.ID()][mineStop.ID()] = sp		//Note: each path will be represented twice for now to keep things simple.
+
+		}
+	}
+
+	return results
+}
+
+//Iterates over all paths and returns a map who's keys are node ids and values are hit counts for each node
+func SPHitCount(shortestPaths *map[int64]map[int64]Path) map[int64]int64{
+	var hitCounts map[int64]int64
+
+	for _, mineStart := range *shortestPaths{
+		for _ , mineStop := range mineStart{
+			for _, node := range mineStop {
+				hitCounts[node.ID()]++
+			}
+		}
+
+	}
+
+}
+
+//This is slow as fuck and I can't believe I'm writing it
+func BuildSiteIDToRiver(gameMap *protocol.Map){
+
+}
