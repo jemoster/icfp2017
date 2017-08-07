@@ -28,6 +28,30 @@ class PyBot:
 
         self._write(msg)
 
+    def run_online(self):
+        # Handshake
+        handshake = {'me': self.name}
+        self._write(handshake)
+        hand_in = self._read_structured()
+
+        state = {}
+        while True:
+            # Execute for state update
+            msg_in = self._read_structured()
+            msg_in['state'] = state
+            if 'punter' in msg_in:
+                msg = self.setup(msg_in)
+            elif 'stop' in msg_in:
+                self.gameplay(msg_in)
+                break
+            else:
+                msg = self.gameplay(msg_in)
+
+            state = msg['state']
+            del msg['state']
+            self._write(msg)
+
+
     @staticmethod
     def _write(msg):
         serialized_msg = json.dumps(msg)
@@ -55,8 +79,3 @@ class PyBot:
         msg_txt = self.buffer[:min_buffer_size]
         self.buffer = self.buffer[min_buffer_size:]
         return json.loads(msg_txt.split(':', 1)[1])
-
-
-if __name__ == '__main__':
-    bot = PyBot('EAGLESSSSS!')
-    bot.run()

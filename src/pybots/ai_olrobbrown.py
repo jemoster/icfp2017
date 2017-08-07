@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import random
+import argparse
 from base_bot import PyBot, log
 
 
@@ -101,5 +102,14 @@ class OlRobBrownBot(PyBot):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='ICFP 2017 Online Adapter')
+    parser.add_argument('-o', dest='online', action="store_true", help='')
+    results = parser.parse_args()
+
     bot = OlRobBrownBot('ol\'robbrown')
-    bot.run()
+
+    if results.online:
+        bot.run_online()
+    else:
+        bot.run()
+

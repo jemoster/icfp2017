@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import print_function
-import sys
-import json
+import argparse
 import random
 from base_bot import PyBot, log
 
@@ -117,7 +116,15 @@ class trollbot(PyBot):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='ICFP 2017 Online Adapter')
+    parser.add_argument('-o', dest='online', action="store_true", help='')
+    results = parser.parse_args()
+
     buffer = ''
     name = random.randint(0, 999999)
-    bot = trollbot(str(random.randint(0,999999)))
-    bot.run()
+    bot = trollbot(str(random.randint(0, 999999)))
+
+    if results.online:
+        bot.run_online()
+    else:
+        bot.run()

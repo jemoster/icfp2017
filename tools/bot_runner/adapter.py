@@ -82,6 +82,8 @@ class OfflineAdapter:
 
     def run(self):
         self.connect()
+
+        bot = None
         try:
             bot = Bot(self.exe)
 
@@ -100,18 +102,12 @@ class OfflineAdapter:
 
             # Get Bot's setup
             bot_setup = bot.read()
-            game_state = bot_setup['state']
-            bot_setup.pop('state')
             self.send(bot_setup)
 
             while True:
                 play = self.receive()
 
-                bot = Bot(self.exe)
-                bot.read()  # Ignore handshake and use the one we got from the server earlier
-                bot.write(handshake)
-
-                play['state'] = game_state
+                assert 'state' not in play
                 bot.write(play)
 
                 if 'stop' in play:
@@ -121,12 +117,11 @@ class OfflineAdapter:
                     continue
 
                 move = bot.read()
-                game_state = move['state']
-                move.pop('state')
                 self.send(move)
 
         finally:
-            bot.proc.kill()
+            if bot:
+                bot.proc.kill()
             self.disconnect()
             if self.log_file:
                 self.log_file.close()
@@ -134,7 +129,9 @@ class OfflineAdapter:
 
 class Bot:
     def __init__(self, exe):
-        self.proc = subprocess.Popen(exe.split(' '), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+        cmd = exe.split(' ')
+        cmd.extend(['-o'])
+        self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
     def write(self, msg):
         self.proc.stdin.write(format_as_message(msg))
