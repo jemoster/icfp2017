@@ -27,9 +27,8 @@ type route struct {
 type futureMove struct {
 	Move protocol.Move
 
-	// completes indicates that this move completes the given route, if not
-	// nil.
-	Completes *route
+	// Route is the route that this move is part of.
+	Route route
 }
 
 type state struct {
@@ -49,11 +48,8 @@ type state struct {
 	// Exhausted indicates we are permanently out of moves.
 	Exhausted bool
 
-	// CompletedRoutes are all the "long" routes that have been
+	// CompletedRoutes are all the routes from mine to sites that have been
 	// successfully completed.
-	//
-	// These are the destinations we picked in pickMoves. It does not
-	// include every node reachable in the graph.
 	CompletedRoutes map[protocol.SiteID]map[protocol.SiteID]struct{}
 }
 
@@ -190,7 +186,8 @@ func pickMoves(g *graph.Graph, s *state) []futureMove {
 		if dist == 0 || len(path) == 0 {
 			break
 		}
-		taken[route{mine, target}] = struct{}{}
+		r := route{mine, target}
+		taken[r] = struct{}{}
 
 		for i := 0; i < len(path)-1; i++ {
 			source := protocol.SiteID(path[i].ID())
@@ -228,12 +225,9 @@ func pickMoves(g *graph.Graph, s *state) []futureMove {
 						Target: target,
 					},
 				},
+				Route: r,
 			})
 			glog.Infof("move %d: %v", i, moves[len(moves)-1])
-		}
-
-		if len(moves) > 0 {
-			moves[len(moves)-1].Completes = &route{mine, target}
 		}
 	}
 
@@ -301,17 +295,17 @@ func nextMove(g *graph.Graph, s *state) protocol.Move {
 				s.Moves = pickMoves(g, s)
 				continue
 			}
-		}
 
-		// TODO(prattmic): If we've really screwed up and this move is
-		// invalid, CompletedRoutes will be out of sync.
-		if move.Completes != nil {
-			c := move.Completes
-			if s.CompletedRoutes[c.Mine] == nil {
-				s.CompletedRoutes[c.Mine] = make(map[protocol.SiteID]struct{})
+			// TODO(prattmic): If we've really screwed up and this move is
+			// invalid, CompletedRoutes will be out of sync.
+			//
+			// We've always completed at least a partial route. From the
+			// mine to this move's target site.
+			r := move.Route
+			if s.CompletedRoutes[r.Mine] == nil {
+				s.CompletedRoutes[r.Mine] = make(map[protocol.SiteID]struct{})
 			}
-			s.CompletedRoutes[c.Mine][c.Site] = struct{}{}
-			glog.Infof("Completing route: %d -> %d", c.Mine, c.Site)
+			s.CompletedRoutes[r.Mine][move.Move.Claim.Target] = struct{}{}
 		}
 
 		return move.Move
