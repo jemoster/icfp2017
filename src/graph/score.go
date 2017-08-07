@@ -7,9 +7,7 @@ import (
 	"github.com/jemoster/icfp2017/src/protocol"
 )
 
-func (g *Graph) Score(mines []protocol.SiteID, numPunters int) []protocol.Score {
-	dist := g.ShortestDistances(mines)
-
+func (g *Graph) Score(mines []protocol.SiteID, numPunters int, points func(punter uint64, src, dst protocol.SiteID) int64) []protocol.Score {
 	scores := make([]protocol.Score, numPunters)
 
 	for i := 0; i < numPunters; i++ {
@@ -30,8 +28,7 @@ func (g *Graph) Score(mines []protocol.SiteID, numPunters int) []protocol.Score 
 					return false
 				},
 				Visit: func(src, dst graph.Node) {
-					d := dist[m][protocol.SiteID(dst.ID())]
-					s.Score += int64(d * d)
+					s.Score += points(s.Punter, m, protocol.SiteID(dst.ID()))
 				},
 			}
 

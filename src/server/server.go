@@ -15,9 +15,8 @@ import (
 )
 
 type Future struct {
-	Source    SiteID `json:"source"`
-	Target    SiteID `json:"target"`
-	fulfilled bool
+	Source SiteID `json:"source"`
+	Target SiteID `json:"target"`
 }
 
 type Punter struct {
@@ -29,7 +28,7 @@ type Punter struct {
 	reader *bufio.Reader
 	writer io.Writer
 
-	futures  []Future
+	futures  map[SiteID]SiteID
 	splurges int
 	options  int
 }
@@ -259,7 +258,7 @@ func (s *Session) play(srv net.Listener) ([]Score, error) {
 		punter := &s.Punters[i]
 
 		setup := sendSetup{
-			uint64(i), uint64(s.NumPunters), &s.Map, Settings{Futures: false, Splurges: false, Options: false},
+			uint64(i), uint64(s.NumPunters), &s.Map, s.Settings,
 		}
 
 		if err := Send(punter.writer, setup); err != nil {
@@ -273,6 +272,10 @@ func (s *Session) play(srv net.Listener) ([]Score, error) {
 
 		if rS.Ready != uint64(i) {
 			log.Printf("[WARNING] Punter %d is very confused about it's identity.")
+		}
+
+		for _, future := range rS.Futures {
+			punter.futures[future.Source] = future.Target // todo: ensure source is mine
 		}
 	}
 
@@ -299,7 +302,28 @@ func (s *Session) play(srv net.Listener) ([]Score, error) {
 
 	}
 
-	sv := s.Graph.Score(s.Map.Mines, s.NumPunters)
+	dist := s.Graph.ShortestDistances(s.Map.Mines)
+
+	sv := s.Graph.Score(s.Map.Mines, s.NumPunters, func(p uint64, src, dst SiteID) int64 {
+		d := int64(dist[src][dst])
+		v := d * d
+
+		if s.Settings.Futures {
+			if s.Punters[p].futures[src] == dst {
+				v += 2 * d * d * d // add double because so we can remove indiscriminately later
+			}
+		}
+
+		return v
+	})
+
+	for i, _ := range sv {
+		score := &sv[i]
+		for src, dst := range s.Punters[score.Punter].futures {
+			d := int64(dist[src][dst])
+			score.Score -= d * d * d // we can remove always because we added double if present earlier
+		}
+	}
 
 	sS := sendStop{
 		stop{

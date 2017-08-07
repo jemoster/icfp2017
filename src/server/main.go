@@ -38,6 +38,7 @@ func main() {
 	srvPort := flag.Int("port", 9001, "The port to listen on")
 	numPunters := flag.Int("punters", 2, "Number of players")
 
+	futures := flag.Bool("futures", true, "to disable futures use --futures=false")
 	splurges := flag.Bool("splurges", true, "to disable splurges use --splurges=false")
 	options := flag.Bool("options", true, "to disable options use --options=false")
 
@@ -80,7 +81,7 @@ func main() {
 		Port:       *srvPort,
 		NumPunters: *numPunters,
 		Settings: protocol.Settings{
-			Futures:  false,
+			Futures:  *futures,
 			Splurges: *splurges,
 			Options:  *options,
 		},
