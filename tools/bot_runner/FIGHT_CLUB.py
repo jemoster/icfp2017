@@ -46,7 +46,7 @@ def run_server(map, port, punters):
     cmd = 'docker run {volumes} --expose {port} --rm boxes server -map {basedir}maps/{map} -port {port} -punters {punters}' \
         .format(volumes=VOLS, map=map, exe=exe, port=port, basedir=BASEDIR, punters=punters)
     print(cmd)
-    return subprocess.Popen(cmd.split(' ')) #, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+    return subprocess.Popen(cmd.split(' '))  #, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
 
 if __name__ == '__main__':
