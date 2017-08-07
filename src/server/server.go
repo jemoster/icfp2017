@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-	
 	"fmt"
 	"io"
 	"log"
@@ -329,7 +327,7 @@ type Server struct {
 	RunOnce    bool
 }
 
-func (s *Server) run() {
+func (s *Server) run(results *bufio.Writer) {
 	laddr := fmt.Sprintf(":%d", s.Port)
 
 	srv, err := net.Listen("tcp", laddr)
@@ -340,12 +338,6 @@ func (s *Server) run() {
 
 	fmt.Printf("-\n")
 	fmt.Printf("Listening at %s\n", laddr)
-
-	results, err := os.OpenFile("results.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE , 0600)
-	if err != nil {
-		panic(err)
-	}
-	defer results.Close()
 	
 	for {
 		session := Session{
@@ -370,6 +362,7 @@ func (s *Server) run() {
 			results.WriteString(fmt.Sprintf("%s\n", name))
 			results.WriteString(fmt.Sprintf("%d\n", score.Score))
 		}
+		results.Flush()
 		
 		if s.RunOnce {
 			return

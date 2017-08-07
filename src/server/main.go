@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"bufio"
 )
 
 func loadMap(path string) (*protocol.Map, error) {
@@ -40,6 +41,7 @@ func main() {
 	options := flag.Bool("options", true, "to disable options use --options=false")
 	
 	runOnce := flag.Bool("runonce", false, "to run only one session use --runonce=true")
+	resultsFileName := flag.String("results", "results.log", "match results are appended to this file.")
 
 	flag.Parse()
 
@@ -56,6 +58,15 @@ func main() {
 	fmt.Printf("  Sites:  %d\n", len(mapData.Sites))
 	fmt.Printf("  Rivers: %d\n", len(mapData.Rivers))
 	fmt.Printf("  Mines:  %d\n", len(mapData.Mines))
+	
+	resultsFile, err := os.OpenFile(*resultsFileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE , 0600)
+	if err != nil {
+		panic(err)
+	}
+	defer resultsFile.Close()
+	
+	resultsWriter := bufio.NewWriter(resultsFile)
+	defer resultsWriter.Flush()
 
 	serv := Server{
 		Map:        *mapData,
@@ -69,5 +80,5 @@ func main() {
 		RunOnce: *runOnce,
 	}
 
-	serv.run()
+	serv.run(resultsWriter)
 }
