@@ -170,6 +170,8 @@ data/*
 /brownian
 /punter2
 
+/icfp-gorilla.tar.gz
+
 tools/replay/server_env/
 # Editor swap files
 *.swp

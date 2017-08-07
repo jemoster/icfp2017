@@ -52,3 +52,30 @@ multiplay: build
 
 idle-run: build
 	docker run $(VOLS) --name $(IDLENAME) -d boxes $(IDLERUN)
+
+# GOPATH without leading /
+GOPATH_NO_SLASH=$(GOPATH:/%=%)
+
+ICFP=$(abspath $(GOPATH)/src/github.com/jemoster/icfp2017/)
+ICFP_NO_SLASH=$(ICFP:/%=%)
+
+icfp-gorilla.tar.gz:
+	if [[ $(GOPATH) == "" ]]; then \
+		echo GOPATH must be set;   \
+		exit 1;                    \
+	fi
+
+	# --transform to strip GOPATH from path.
+	# --exclude to exclude hidden files.
+	tar --create --file $@ --verbose         \
+		--exclude '.[^/]*'                   \
+		--transform 's!$(GOPATH_NO_SLASH)!!' \
+		$(GOPATH)/src/github.com/golang $(GOPATH)/src/gonum.org $(GOPATH)/src/github.com/jemoster/icfp2017/src
+
+	# Now add install and README at the top.
+	tar --append --file $@ --verbose \
+		--transform 's!$(ICFP_NO_SLASH)!!' \
+		$(GOPATH)/src/github.com/jemoster/icfp2017/install \
+		$(GOPATH)/src/github.com/jemoster/icfp2017/README
+
+.PHONY: icfp-gorilla.tar.gz
