@@ -21,10 +21,6 @@
                   <td><input type="text" id="gamePort" value="sample.txt" size="24" data-cip-id="gamePort"></td>
                 </tr>
                 <tr>
-                  <td>Punter name:</td>
-                  <td><input type="text" id="punterName" value="lambda punter" size="24" data-cip-id="punterName"></td>
-                </tr>
-                <tr>
                   <td colspan="2">
                     <button class="btn" id="connect" onclick="_connect();">
                       Connect
@@ -47,18 +43,13 @@
                   <td>Our Player Color:</td>
                   <td><div id="punter-color"></div></td>
                 </tr>
-                <tr>
-                  <td>
-                    <button class="btn" id="pass-button" onclick="handlePass()" disabled="">Pass</button>
-                  </td>
-                </tr>
                 </tbody></table>
             </fieldset>
           </div>
         </div>
         <div class="container-fluid">
           <fieldset>
-            <legend>Canvas</legend>
+            <legend>Map</legend>
             <div class="container-fluid" id="cy"></div>
             <div id="loading">
               <span class="fa fa-refresh fa-spin"></span>
