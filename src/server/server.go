@@ -9,7 +9,6 @@ import (
 	"bufio"
 
 	"github.com/jemoster/icfp2017/src/graph"
-	"gonum.org/v1/gonum/graph/simple"
 
 	. "github.com/jemoster/icfp2017/src/protocol"
 	. "github.com/jemoster/icfp2017/src/protocol/io"
@@ -78,7 +77,7 @@ type Session struct {
 	NumPunters int
 	Settings   Settings
 
-	graph *simple.UndirectedGraph
+	graph *graph.Graph
 }
 
 func (s *Session) acceptMove(punter *Punter) (*Move, error) {
@@ -212,7 +211,7 @@ Outer:
 }
 
 func (s Session) play(srv net.Listener) ([]Score, error) {
-	s.graph = graph.Build(&s.Map)
+	s.graph = graph.New(&s.Map, func(e *graph.MetadataEdge) float64 { return 1.0 })
 
 	punters := make([]Punter, s.NumPunters)
 
@@ -295,7 +294,7 @@ func (s Session) play(srv net.Listener) ([]Score, error) {
 
 	}
 
-	sv := graph.Score(s.graph, s.Map.Mines, s.NumPunters)
+	sv := s.graph.Score(s.Map.Mines, s.NumPunters)
 
 	sS := sendStop{
 		stop{
