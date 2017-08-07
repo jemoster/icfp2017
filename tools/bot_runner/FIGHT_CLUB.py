@@ -26,9 +26,9 @@ BOT_INDEX = {
     'brownian': './brownian',
     'blob': './blob',
     'punter2': './punter2',
-    'random': './src/pybots/ai_random.py',
-    'trollbot': './src/pybots/trollbot.py',
-    'robbrown': './src/pybots/ai_olrobbrown.py',
+    'random': '"python3 ./src/pybots/ai_random.py"',
+    'trollbot': '"python3 ./src/pybots/trollbot.py"',
+    'robbrown': '"python3 ./src/pybots/ai_olrobbrown.py"',
 }
 
 
