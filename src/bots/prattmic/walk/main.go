@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/jemoster/icfp2017/src/graph"
@@ -335,8 +336,12 @@ func main() {
 	flag.Set("logtostderr", "true")
 	flag.Parse()
 
+	start := time.Now()
+
 	var s LongWalk
 	if err := protocol.Play(os.Stdin, os.Stdout, &s); err != nil {
 		glog.Exitf("Play failed: %v", err)
 	}
+
+	glog.Infof("Run time: %v", time.Since(start))
 }
