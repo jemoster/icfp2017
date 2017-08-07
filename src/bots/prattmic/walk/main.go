@@ -16,7 +16,10 @@ import (
 )
 
 // maxMoves is the approximate maximum number of moves to plan ahead.
-const maxMoves = 25
+//
+// A value of 1 means that we will plan only a single route, because a route
+// can have at minimum 1 move. However, a route with more moves may be computed.
+const maxMoves = 1
 
 // route is a mine-site route, which includes multiple intermediate sites.
 type route struct {
