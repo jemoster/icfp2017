@@ -21,6 +21,16 @@ import (
 // can have at minimum 1 move. However, a route with more moves may be computed.
 const maxMoves = 1
 
+// TODO(prattmic): This is ugly. We should do work in a goroutine and just wait
+// for an alarm on the main goroutine.
+var (
+	StartTime time.Time
+	TimeoutThreshold time.Duration
+)
+
+const setupTimeoutThreshold = 9900*time.Millisecond
+const playTimeoutThreshold = 900*time.Millisecond
+
 // route is a mine-site route, which includes multiple intermediate sites.
 type route struct {
 	Mine protocol.SiteID
@@ -184,6 +194,11 @@ func pickMoves(g *graph.Graph, s *state) []futureMove {
 	}
 
 	for len(moves) < n {
+		if time.Since(StartTime) > TimeoutThreshold {
+			glog.Infof("Out of time, got to go!")
+			break
+		}
+
 		mine, target, dist, path := furthestNode(g, s, shortest, taken)
 		glog.Infof("Furthest site: %d -> %d: %d, path: %+v", mine, target, dist, path)
 		if dist == 0 || len(path) == 0 {
@@ -193,6 +208,11 @@ func pickMoves(g *graph.Graph, s *state) []futureMove {
 		taken[r] = struct{}{}
 
 		for i := 0; i < len(path)-1; i++ {
+			if time.Since(StartTime) > TimeoutThreshold {
+				glog.Infof("Out of time, got to go!")
+				break
+			}
+
 			source := protocol.SiteID(path[i].ID())
 			target := protocol.SiteID(path[i+1].ID())
 
@@ -238,6 +258,9 @@ func pickMoves(g *graph.Graph, s *state) []futureMove {
 }
 
 func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
+	StartTime = time.Now()
+	TimeoutThreshold = setupTimeoutThreshold
+
 	glog.Infof("Setup: game settings: %+v", setup.Settings)
 
 	s := &state{
@@ -282,6 +305,15 @@ func nextMove(g *graph.Graph, s *state) protocol.Move {
 			glog.Warningf("Ran out of moves!")
 			s.Moves = pickMoves(g, s)
 			if len(s.Moves) <= 0 {
+				if time.Since(StartTime) > TimeoutThreshold {
+					// Moves not actually exhausted, we just ran out of time.
+					return protocol.Move{
+						Pass: &protocol.Pass{
+							s.Punter,
+						},
+					}
+				}
+
 				glog.Warningf("Moves completely exhausted")
 				s.Exhausted = true
 				continue
@@ -338,6 +370,9 @@ func checkMoves(g *graph.Graph, s *state, m []protocol.Move) {
 }
 
 func (LongWalk) Play(m []protocol.Move, jsonState json.RawMessage) (*protocol.GameplayOutput, error) {
+	StartTime = time.Now()
+	TimeoutThreshold = playTimeoutThreshold
+
 	glog.Infof("Play")
 
 	var s state
