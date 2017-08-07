@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	
 	"fmt"
 	"io"
 	"log"
@@ -22,7 +24,8 @@ type Future struct {
 
 type Punter struct {
 	ID uint64
-
+	Name string
+	
 	conn net.Conn
 
 	reader *bufio.Reader
@@ -74,10 +77,12 @@ type sendStop struct {
 
 type Session struct {
 	Map        Map
-	NumPunters int
 	Settings   Settings
-
-	graph *graph.Graph
+	
+	Punters    []Punter
+	NumPunters int
+	
+	Graph *graph.Graph
 }
 
 func (s *Session) acceptMove(punter *Punter) (*Move, error) {
@@ -91,14 +96,14 @@ Outer:
 	case rM.Move.Claim != nil:
 		claim := rM.Move.Claim
 
-		ok := s.graph.HasEdgeBetween(claim.Source, claim.Target)
+		ok := s.Graph.HasEdgeBetween(claim.Source, claim.Target)
 
 		if !ok {
 			fmt.Printf("[%d] claimed a river that doesn't exist! D:", punter.ID)
 			break
 		}
 
-		river := s.graph.EdgeBetween(claim.Source, claim.Target).(*graph.MetadataEdge)
+		river := s.Graph.EdgeBetween(claim.Source, claim.Target).(*graph.MetadataEdge)
 
 		if river.IsOwned {
 			fmt.Printf("[%d] claimed a river that has already been claimed! D:\n", punter.ID)
@@ -132,7 +137,7 @@ Outer:
 
 		src := splurge.Route[0]
 		for _, tgt := range splurge.Route[1:] {
-			edge := s.graph.EdgeBetween(src, tgt).(*graph.MetadataEdge) // should make sure it exists first..
+			edge := s.Graph.EdgeBetween(src, tgt).(*graph.MetadataEdge) // should make sure it exists first..
 
 			if edge.IsOwned {
 				if edge.IsOptioned {
@@ -158,7 +163,7 @@ Outer:
 
 		src = splurge.Route[0]
 		for _, tgt := range splurge.Route[1:] {
-			edge := s.graph.EdgeBetween(src, tgt).(*graph.MetadataEdge) // should make sure it exists first..
+			edge := s.Graph.EdgeBetween(src, tgt).(*graph.MetadataEdge) // should make sure it exists first..
 
 			if edge.IsOwned {
 				edge.OptionPunter = punter.ID
@@ -187,7 +192,7 @@ Outer:
 			break
 		}
 
-		edge := s.graph.EdgeBetween(option.Source, option.Target).(*graph.MetadataEdge)
+		edge := s.Graph.EdgeBetween(option.Source, option.Target).(*graph.MetadataEdge)
 
 		if !edge.IsOwned {
 			fmt.Printf("[%d] tried to option, but it isn't owned.  I don't know what to do here, so I'm going to just go with it.\n", punter.ID)
@@ -210,10 +215,10 @@ Outer:
 	return &Move{Pass: &Pass{punter.ID}}, nil
 }
 
-func (s Session) play(srv net.Listener) ([]Score, error) {
-	s.graph = graph.New(&s.Map, func(e *graph.MetadataEdge) float64 { return 1.0 })
+func (s *Session) play(srv net.Listener) ([]Score, error) {
+	s.Graph = graph.New(&s.Map, func(e *graph.MetadataEdge) float64 { return 1.0 })
 
-	punters := make([]Punter, s.NumPunters)
+	s.Punters = make([]Punter, s.NumPunters)
 
 	fmt.Printf("-\n")
 	fmt.Printf("Waiting on clients...\n")
@@ -225,23 +230,25 @@ func (s Session) play(srv net.Listener) ([]Score, error) {
 		}
 		defer conn.Close()
 
-		punters[i].ID = uint64(i)
-		punters[i].conn = conn
-		punters[i].reader = bufio.NewReader(conn)
-		punters[i].writer = conn
-		punters[i].splurges = 0
-		punters[i].options = len(s.Map.Mines)
+		s.Punters[i].ID = uint64(i)
+		s.Punters[i].conn = conn
+		s.Punters[i].reader = bufio.NewReader(conn)
+		s.Punters[i].writer = conn
+		s.Punters[i].splurges = 0
+		s.Punters[i].options = len(s.Map.Mines)
 
 		fmt.Printf("  [%d/%d] Client connected.\n", i+1, s.NumPunters)
 	}
 
 	for i := 0; i < s.NumPunters; i++ {
-		punter := &punters[i]
+		punter := &s.Punters[i]
 
 		var rH recvHandshake
 		if err := Recv(punter.reader, &rH); err != nil {
 			return nil, err
 		}
+		
+		punter.Name = rH.Name
 
 		fmt.Printf("Welcome, %s!\n", rH.Name)
 
@@ -251,7 +258,7 @@ func (s Session) play(srv net.Listener) ([]Score, error) {
 	}
 
 	for i := 0; i < s.NumPunters; i++ {
-		punter := &punters[i]
+		punter := &s.Punters[i]
 
 		setup := sendSetup{
 			uint64(i), uint64(s.NumPunters), &s.Map, Settings{Futures: false, Splurges: false, Options: false},
@@ -274,12 +281,12 @@ func (s Session) play(srv net.Listener) ([]Score, error) {
 	sM := new(sendMove)
 	sM.Move.Moves = make([]*Move, s.NumPunters)
 
-	for i, _ := range punters {
+	for i, _ := range s.Punters {
 		sM.Move.Moves[i] = &Move{Pass: &Pass{uint64(i)}}
 	}
 
 	for curTurn := 0; curTurn < len(s.Map.Rivers); curTurn++ {
-		punter := &punters[curTurn%s.NumPunters]
+		punter := &s.Punters[curTurn%s.NumPunters]
 
 		if err := Send(punter.writer, sM); err != nil {
 			return nil, err
@@ -294,7 +301,7 @@ func (s Session) play(srv net.Listener) ([]Score, error) {
 
 	}
 
-	sv := s.graph.Score(s.Map.Mines, s.NumPunters)
+	sv := s.Graph.Score(s.Map.Mines, s.NumPunters)
 
 	sS := sendStop{
 		stop{
@@ -304,7 +311,7 @@ func (s Session) play(srv net.Listener) ([]Score, error) {
 	}
 
 	for i := 0; i < s.NumPunters; i++ {
-		punter := &punters[i]
+		punter := &s.Punters[i]
 
 		if err := Send(punter.writer, sS); err != nil {
 			return nil, err
@@ -319,6 +326,7 @@ type Server struct {
 	Port       int
 	NumPunters int
 	Settings   Settings
+	RunOnce    bool
 }
 
 func (s *Server) run() {
@@ -333,6 +341,12 @@ func (s *Server) run() {
 	fmt.Printf("-\n")
 	fmt.Printf("Listening at %s\n", laddr)
 
+	results, err := os.OpenFile("results.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE , 0600)
+	if err != nil {
+		panic(err)
+	}
+	defer results.Close()
+	
 	for {
 		session := Session{
 			Map:        s.Map,
@@ -340,12 +354,25 @@ func (s *Server) run() {
 			Settings:   s.Settings,
 		}
 
-		score, err := session.play(srv)
+		scores, err := session.play(srv)
 		if err != nil {
 			fmt.Printf("[ERROR] %+v\n", err)
 			continue
 		}
+		
+		fmt.Printf("Score: %+v\n", scores)
 
-		fmt.Printf("Score: %+v\n", score)
+		results.WriteString(fmt.Sprintf("%d\n", session.NumPunters))
+		for _, score := range scores {
+			id := score.Punter
+			name := session.Punters[id].Name
+			
+			results.WriteString(fmt.Sprintf("%s\n", name))
+			results.WriteString(fmt.Sprintf("%d\n", score.Score))
+		}
+		
+		if s.RunOnce {
+			return
+		}
 	}
 }

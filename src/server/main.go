@@ -38,6 +38,8 @@ func main() {
 
 	splurges := flag.Bool("splurges", true, "to disable splurges use --splurges=false")
 	options := flag.Bool("options", true, "to disable options use --options=false")
+	
+	runOnce := flag.Bool("runonce", false, "to run only one session use --runonce=true")
 
 	flag.Parse()
 
@@ -64,6 +66,7 @@ func main() {
 			Splurges: *splurges,
 			Options:  *options,
 		},
+		RunOnce: *runOnce,
 	}
 
 	serv.run()
