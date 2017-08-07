@@ -49,8 +49,11 @@ type state struct {
 	// Exhausted indicates we are permanently out of moves.
 	Exhausted bool
 
-	// CompletedRoutes are all the routes that have been successfully
-	// completed.
+	// CompletedRoutes are all the "long" routes that have been
+	// successfully completed.
+	//
+	// These are the destinations we picked in pickMoves. It does not
+	// include every node reachable in the graph.
 	CompletedRoutes map[protocol.SiteID]map[protocol.SiteID]struct{}
 }
 
@@ -78,12 +81,12 @@ func (LongWalk) Name() string {
 // they are.
 //
 // shortest is the set of shortest path structures for each mine.
-// except is the set of sites not to consider.
+// except is the set of routes not to consider.
 func furthestNode(
 	g *graph.Graph,
 	s *state,
 	shortest map[protocol.SiteID]*path.Shortest,
-	except map[protocol.SiteID]struct{}) (protocol.SiteID, protocol.SiteID, uint64, []gograph.Node) {
+	except map[route]struct{}) (protocol.SiteID, protocol.SiteID, uint64, []gograph.Node) {
 	var (
 		mine     protocol.SiteID
 		target   protocol.SiteID
@@ -100,7 +103,8 @@ func furthestNode(
 		}
 
 		for _, site := range s.Map.Sites {
-			if _, ok := except[site.ID]; ok {
+			r := route{m, site.ID}
+			if _, ok := except[r]; ok {
 				continue
 			}
 
@@ -162,9 +166,17 @@ func pickMoves(g *graph.Graph, s *state) []futureMove {
 		n = maxMoves
 	}
 
-	taken := make(map[protocol.SiteID]struct{})
+	// All of the routes taken by previous moves, plus new routes that will
+	// be taken by future moves.
+	taken := make(map[route]struct{})
 	claims := make(map[claim]struct{}, n)
 	moves := make([]futureMove, 0, n)
+
+	for mine, m := range s.CompletedRoutes {
+		for site, _ := range m {
+			taken[route{mine, site}] = struct{}{}
+		}
+	}
 
 	shortest := make(map[protocol.SiteID]*path.Shortest)
 	for _, m := range s.Map.Mines {
@@ -178,7 +190,7 @@ func pickMoves(g *graph.Graph, s *state) []futureMove {
 		if dist == 0 || len(path) == 0 {
 			break
 		}
-		taken[target] = struct{}{}
+		taken[route{mine, target}] = struct{}{}
 
 		for i := 0; i < len(path)-1; i++ {
 			source := protocol.SiteID(path[i].ID())
