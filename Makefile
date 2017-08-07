@@ -1,6 +1,8 @@
 .PHONY: all build run shell
 
 # Note that this requires you have the directory checked out to /tmp/maps
+MAP=-map /src/github.com/jemoster/icfp2017/maps/sample.json
+PORT=9000
 MAPS=-v /tmp/maps:/src/github.com/jemoster/icfp2017/maps
 PLAYLOG=-v /tmp/playlogs:/src/github.com/jemoster/icfp2017/data
 VOLS=$(MAPS) $(PLAYLOG)
@@ -8,6 +10,9 @@ RUNNER=./tools/bot_runner/online_adapter.py
 PLAYER=./tools/bot_runner/make_player_data.py
 IDLERUN=./tools/bot_runner/idle_runner.py
 IDLENAME=idle-tmp
+SERVER=server
+NET=--net $(SERVER)
+
 
 all: run
 
@@ -52,3 +57,12 @@ multiplay: build
 
 idle-run: build
 	docker run $(VOLS) --name $(IDLENAME) -d boxes $(IDLERUN)
+
+network:
+	docker network create $(SERVER)
+
+server:
+	docker run $(VOLS) $(NET) --name $(SERVER) --rm boxes ./server $(MAP) -port $(PORT) -punters 2
+
+player:
+	docker run $(VOLS) $(NET) --rm boxes $(RUNNER) ./src/pybots/ai_random.py $(PORT) --server $(SERVER)
