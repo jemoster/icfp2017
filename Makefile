@@ -65,4 +65,19 @@ server:
 	docker run $(VOLS) $(NET) --name $(SERVER) --rm boxes ./server $(MAP) -port $(PORT) -punters 2
 
 player:
-	docker run $(VOLS) $(NET) --rm boxes $(RUNNER) ./src/pybots/ai_random.py $(PORT) --server $(SERVER)
+	docker run $(VOLS) $(NET) --rm -d boxes $(RUNNER) ./src/pybots/ai_random.py $(PORT) --server $(SERVER)
+
+play-random:
+	docker run $(VOLS) $(NET) --rm -d boxes $(RUNNER) ./src/pybots/ai_random.py $(PORT) --server $(SERVER)
+
+play-robbrown:
+	docker run $(VOLS) $(NET) --rm -d boxes $(RUNNER) ./src/pybots/ai_olrobbrown.py $(PORT) --server $(SERVER)
+
+play-walkbot:
+	docker run $(VOLS) $(NET) --rm -d boxes $(RUNNER) ./walk $(PORT) --server $(SERVER)
+
+play-brownian:
+	docker run $(VOLS) $(NET) --rm -d boxes $(RUNNER) ./brownian $(PORT) --server $(SERVER)
+
+play-simpleton:
+	docker run $(VOLS) $(NET) --rm -d boxes $(RUNNER) ./simpleton $(PORT) --server $(SERVER)
