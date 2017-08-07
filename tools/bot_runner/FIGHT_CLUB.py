@@ -49,7 +49,7 @@ def run(exe, port, host):
 
 def run_server(map, port, punters, host):
     exe = 'server'
-    cmd = 'docker run {volumes} {net} --name {server} --expose {port} --rm boxes server -map {basedir}maps/{map} -port {port} -punters {punters}' \
+    cmd = 'docker run {volumes} {net} --name {server} --expose {port} --rm boxes server -map {basedir}maps/{map} -port {port} -punters {punters} -runonce' \
         .format(
             volumes=VOLS,
             net=NET, map=map, exe=exe, port=port, basedir=BASEDIR, punters=punters,
