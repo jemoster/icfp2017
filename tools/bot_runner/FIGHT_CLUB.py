@@ -47,13 +47,13 @@ def run(exe, port, host):
     return subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
 
-def run_server(map, port, punters):
+def run_server(map, port, punters, host):
     exe = 'server'
     cmd = 'docker run {volumes} {net} --name {server} --expose {port} --rm boxes server -map {basedir}maps/{map} -port {port} -punters {punters}' \
         .format(
             volumes=VOLS,
             net=NET, map=map, exe=exe, port=port, basedir=BASEDIR, punters=punters,
-            server=SERVER
+            server=host
     )
     print(cmd)
     return subprocess.Popen(cmd.split(' '))  #, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
@@ -69,9 +69,9 @@ if __name__ == '__main__':
     port = results.port
     map = results.map
     bots = results.bot
-    host = SERVER
+    host = SERVER+str(port)
 
-    server_p = run_server(map, port, len(bots))
+    server_p = run_server(map, port, len(bots), host)
     sleep(1.0)
     bot_proc = []
     for bot in bots:
