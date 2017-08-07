@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -8,7 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"bufio"
+	"path"
 )
 
 func loadMap(path string) (*protocol.Map, error) {
@@ -33,15 +34,15 @@ func loadMap(path string) (*protocol.Map, error) {
 }
 
 func main() {
-	mapPath := flag.String("map", "", "[required] A JSON file")
+	mapPath := flag.String("map", path.Join("..", "..", "maps", "sample.json"), "A file containing a JSON Map object")
 	srvPort := flag.Int("port", 9001, "The port to listen on")
 	numPunters := flag.Int("punters", 2, "Number of players")
 
 	splurges := flag.Bool("splurges", true, "to disable splurges use --splurges=false")
 	options := flag.Bool("options", true, "to disable options use --options=false")
-	
+
 	runOnce := flag.Bool("runonce", false, "to run only one session use --runonce=true")
-	resultsFileName := flag.String("results", "results.log", "match results are appended to this file.")
+	resultsDir := flag.String("results", "results", "directory in which to place log files.")
 
 	flag.Parse()
 
@@ -58,13 +59,19 @@ func main() {
 	fmt.Printf("  Sites:  %d\n", len(mapData.Sites))
 	fmt.Printf("  Rivers: %d\n", len(mapData.Rivers))
 	fmt.Printf("  Mines:  %d\n", len(mapData.Mines))
-	
-	resultsFile, err := os.OpenFile(*resultsFileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE , 0600)
+
+	if _, err := os.Stat(*resultsDir); os.IsNotExist(err) {
+		os.Mkdir(*resultsDir, os.ModePerm)
+	}
+
+	resultsFileName := path.Join(*resultsDir, fmt.Sprintf("%s.log", path.Base(*mapPath)))
+
+	resultsFile, err := os.OpenFile(resultsFileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		panic(err)
 	}
 	defer resultsFile.Close()
-	
+
 	resultsWriter := bufio.NewWriter(resultsFile)
 	defer resultsWriter.Flush()
 

@@ -21,9 +21,9 @@ type Future struct {
 }
 
 type Punter struct {
-	ID uint64
+	ID   uint64
 	Name string
-	
+
 	conn net.Conn
 
 	reader *bufio.Reader
@@ -74,12 +74,12 @@ type sendStop struct {
 }
 
 type Session struct {
-	Map        Map
-	Settings   Settings
-	
+	Map      Map
+	Settings Settings
+
 	Punters    []Punter
 	NumPunters int
-	
+
 	Graph *graph.Graph
 }
 
@@ -245,7 +245,7 @@ func (s *Session) play(srv net.Listener) ([]Score, error) {
 		if err := Recv(punter.reader, &rH); err != nil {
 			return nil, err
 		}
-		
+
 		punter.Name = rH.Name
 
 		fmt.Printf("Welcome, %s!\n", rH.Name)
@@ -338,7 +338,7 @@ func (s *Server) run(results *bufio.Writer) {
 
 	fmt.Printf("-\n")
 	fmt.Printf("Listening at %s\n", laddr)
-	
+
 	for {
 		session := Session{
 			Map:        s.Map,
@@ -351,19 +351,19 @@ func (s *Server) run(results *bufio.Writer) {
 			fmt.Printf("[ERROR] %+v\n", err)
 			continue
 		}
-		
+
 		fmt.Printf("Score: %+v\n", scores)
 
 		results.WriteString(fmt.Sprintf("%d\n", session.NumPunters))
 		for _, score := range scores {
 			id := score.Punter
 			name := session.Punters[id].Name
-			
+
 			results.WriteString(fmt.Sprintf("%s\n", name))
 			results.WriteString(fmt.Sprintf("%d\n", score.Score))
 		}
 		results.Flush()
-		
+
 		if s.RunOnce {
 			return
 		}
