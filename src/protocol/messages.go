@@ -15,6 +15,9 @@ type Site struct {
 	ID SiteID  `json:"id"`
 	X  float64 `json:"x"`
 	Y  float64 `json:"y"`
+
+	//Data for AI
+	Score float64
 }
 
 type River struct {
@@ -27,6 +30,9 @@ type River struct {
 
 	IsOptioned   bool   `json:"isoptioned,omitempty"`
 	OptionPunter uint64 `json:"optionowner,omitempty"`
+
+
+
 }
 
 type Map struct {
