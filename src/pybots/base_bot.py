@@ -17,7 +17,7 @@ class PyBot:
         # Handshake
         handshake = {'me': self.name}
         self._write(handshake)
-        hand_in = self._read_structured()
+        self._read_structured()
 
         # Execute for state update
         msg_in = self._read_structured()
