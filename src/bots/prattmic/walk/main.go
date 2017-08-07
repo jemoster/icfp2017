@@ -18,6 +18,20 @@ import (
 // maxMoves is the approximate maximum number of moves to plan ahead.
 const maxMoves = 25
 
+// route is a mine-site route, which includes multiple intermediate sites.
+type route struct {
+	Mine protocol.SiteID
+	Site protocol.SiteID
+}
+
+type futureMove struct {
+	Move protocol.Move
+
+	// completes indicates that this move completes the given route, if not
+	// nil.
+	Completes *route
+}
+
 type state struct {
 	Punter  uint64
 	Punters uint64
@@ -30,10 +44,14 @@ type state struct {
 
 	// Moves are the next moves to take. The next move is the first in the
 	// list.
-	Moves []protocol.Move
+	Moves []futureMove
 
 	// Exhausted indicates we are permanently out of moves.
 	Exhausted bool
+
+	// CompletedRoutes are all the routes that have been successfully
+	// completed.
+	CompletedRoutes map[protocol.SiteID]map[protocol.SiteID]struct{}
 }
 
 func (s *state) weightFunc() graph.WeightFunc {
@@ -137,7 +155,7 @@ func makeClaim(source, target protocol.SiteID) claim {
 	return claim{target, source}
 }
 
-func pickMoves(g *graph.Graph, s *state) []protocol.Move {
+func pickMoves(g *graph.Graph, s *state) []futureMove {
 	// There are as many moves as rivers, but divided among all punters.
 	n := ((len(s.Map.Rivers) + int(s.Punters)) / int(s.Punters)) - int(s.Turn)
 	if n > maxMoves {
@@ -146,7 +164,7 @@ func pickMoves(g *graph.Graph, s *state) []protocol.Move {
 
 	taken := make(map[protocol.SiteID]struct{})
 	claims := make(map[claim]struct{}, n)
-	moves := make([]protocol.Move, 0, n)
+	moves := make([]futureMove, 0, n)
 
 	shortest := make(map[protocol.SiteID]*path.Shortest)
 	for _, m := range s.Map.Mines {
@@ -190,14 +208,20 @@ func pickMoves(g *graph.Graph, s *state) []protocol.Move {
 			}
 			claims[c] = struct{}{}
 
-			moves = append(moves, protocol.Move{
-				Claim: &protocol.Claim{
-					Punter: s.Punter,
-					Source: source,
-					Target: target,
+			moves = append(moves, futureMove{
+				Move: protocol.Move{
+					Claim: &protocol.Claim{
+						Punter: s.Punter,
+						Source: source,
+						Target: target,
+					},
 				},
 			})
 			glog.Infof("move %d: %v", i, moves[len(moves)-1])
+		}
+
+		if len(moves) > 0 {
+			moves[len(moves)-1].Completes = &route{mine, target}
 		}
 	}
 
@@ -215,6 +239,8 @@ func (LongWalk) Setup(setup *protocol.Setup) (*protocol.Ready, error) {
 		Distances: make(graph.Distances),
 
 		Turn: 0,
+
+		CompletedRoutes: make(map[protocol.SiteID]map[protocol.SiteID]struct{}),
 	}
 
 	g := graph.New(&s.Map, s.weightFunc())
@@ -256,8 +282,8 @@ func nextMove(g *graph.Graph, s *state) protocol.Move {
 		move := s.Moves[0]
 		s.Moves = s.Moves[1:]
 
-		if move.Claim != nil {
-			edge := g.EdgeBetween(g.Node(int64(move.Claim.Source)), g.Node(int64(move.Claim.Target))).(*graph.MetadataEdge)
+		if move.Move.Claim != nil {
+			edge := g.EdgeBetween(g.Node(int64(move.Move.Claim.Source)), g.Node(int64(move.Move.Claim.Target))).(*graph.MetadataEdge)
 			if edge.IsOwned {
 				glog.Warningf("Move %v: river already taken by %d! Recomputing moves.", move, edge.OwnerPunter)
 				s.Moves = pickMoves(g, s)
@@ -265,7 +291,18 @@ func nextMove(g *graph.Graph, s *state) protocol.Move {
 			}
 		}
 
-		return move
+		// TODO(prattmic): If we've really screwed up and this move is
+		// invalid, CompletedRoutes will be out of sync.
+		if move.Completes != nil {
+			c := move.Completes
+			if s.CompletedRoutes[c.Mine] == nil {
+				s.CompletedRoutes[c.Mine] = make(map[protocol.SiteID]struct{})
+			}
+			s.CompletedRoutes[c.Mine][c.Site] = struct{}{}
+			glog.Infof("Completing route: %d -> %d", c.Mine, c.Site)
+		}
+
+		return move.Move
 	}
 }
 
@@ -278,13 +315,13 @@ func checkMoves(g *graph.Graph, s *state, m []protocol.Move) {
 		their := makeClaim(theirMove.Claim.Source, theirMove.Claim.Target)
 
 		for _, ourMove := range s.Moves {
-			if ourMove.Claim == nil {
+			if ourMove.Move.Claim == nil {
 				continue
 			}
 
-			our := makeClaim(ourMove.Claim.Source, ourMove.Claim.Target)
+			our := makeClaim(ourMove.Move.Claim.Source, ourMove.Move.Claim.Target)
 			if our == their {
-				glog.Warningf("Future move %v taken by %d! Recomputing moves.", ourMove, theirMove.Claim.Punter)
+				glog.Warningf("Future move %v taken by %d! Recomputing moves.", ourMove.Move, theirMove.Claim.Punter)
 				s.Moves = pickMoves(g, s)
 			}
 		}
