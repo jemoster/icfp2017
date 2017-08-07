@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Directory of script.
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+GOPATH=${DIR} go build -o punter github.com/jemoster/icfp2017/src/bots/prattmic/walk
