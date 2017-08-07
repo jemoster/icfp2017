@@ -184,8 +184,6 @@ function connect(gamePort, punterName) {
         try {
             let msg = JSON.parse(message.data.split(/:(.+)/)[1]);
 
-            logInfo("parse it!");
-            logInfo(msg);
             // Initial message
             if (msg.map !== undefined) {
                 // Record our ID, and the number of punters
@@ -213,8 +211,6 @@ function connect(gamePort, punterName) {
                 logError("unknown JSON message: " + message.data);
             }
         } catch (e) { // other message from the server
-            logInfo('not the first message');
-            logInfo(e);
             console.log(e);
             if (message.data.constructor == String) {
                 logRelay(message.data);
@@ -309,12 +305,12 @@ function bindTheirTurnHandlers() {
 
 function ourTurn() {
   bindOurTurnHandlers();
-  setStatus("Your move!");
+  setStatus("Playing...");
 }
 
 function theirTurn() {
   bindTheirTurnHandlers();
-  setStatus("Waiting for others to make a move...");
+  setStatus("Playing...");
 }
 
 
